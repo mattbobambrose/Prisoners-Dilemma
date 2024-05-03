@@ -2,7 +2,10 @@ package org.example
 
 import Tournament
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import strategy.*
+import strategy.AlwaysCoop
+import strategy.AlwaysDefect
+import strategy.EveryOther
+import strategy.TitForTat
 
 @OptIn(ExperimentalCoroutinesApi::class)
 fun main() {
@@ -57,14 +60,14 @@ fun main() {
         listOf(
             EveryOther(0, 0),
             TitForTat(0, 0),
-            Friedman(0, 0),
-            DefEveryThree(0, 0),
+//            Friedman(0, 0),
+//            DefEveryThree(0, 0),
             AlwaysCoop(0, 0),
             AlwaysDefect(0, 0),
-            Random(0, 0),
-            Joss(0, 10),
-            Tester(0, 0),
-            TitForTwoTats(0, 0),
+//            Random(0, 0),
+//            Joss(0, 10),
+//            Tester(0, 0),
+//            TitForTwoTats(0, 0),
         ),
         1
     )

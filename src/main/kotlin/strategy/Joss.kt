@@ -1,16 +1,22 @@
 package strategy
 
 import Decision
-import Decision.*
+import Decision.COOPERATE
+import Decision.DEFECT
 
 class Joss(override val forgiveness: Int, override val sneaky: Int) : GameStrategy() {
-    override fun chooseOption(roundNumber: Int, strategyId: String): Decision {
-        return if (player.firstMove()) {
-            COOPERATE
-        } else if (sneakAttack()) {
+    override fun chooseOption(
+        roundNumber: Int,
+        strategyId: String,
+        myMoves: List<Decision>,
+        opponentMoves: List<Decision>
+    ): Decision {
+        return if (sneakAttack()) {
             DEFECT
+        } else if (roundNumber == 0) {
+            COOPERATE
         } else {
-            player.getOpponentMoveXMovesAgo(1)
+            opponentMoves[roundNumber - 1]
         }
     }
 

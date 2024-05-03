@@ -2,9 +2,9 @@ import Decision.COOPERATE
 import strategy.GameStrategy
 
 class Match(
-    private val generation: Generation,
     private val strategy1: GameStrategy,
     private val strategy2: GameStrategy,
+    val scoreboard: Scoreboard,
     private val rules: Rules
 ) {
     private val moves = mutableListOf<Moves>()
@@ -13,13 +13,24 @@ class Match(
 
     fun runMatch() {
         for (i in 0 until rules.rounds) {
-            val d1 = strategy1.chooseOption(i, strategy2.id, moves)
-            val d2 = strategy2.chooseOption(i, strategy1.id, moves)
+            val d1 = strategy1.chooseOption(
+                i,
+                strategy2.fqn,
+                makeHistory(strategy1),
+                makeHistory(strategy2)
+            )
+            val d2 = strategy2.chooseOption(
+                i,
+                strategy1.fqn,
+                makeHistory(strategy2),
+                makeHistory(strategy1)
+            )
+            moves.add(Moves(d1, d2))
             updateMatchScore(d1, d2)
         }
-        with(generation.scoreboard) {
-            getValue(strategy1).updateScorecard(score1, score2, strategy2.id)
-            getValue(strategy2).updateScorecard(score2, score1, strategy1.id)
+        with(scoreboard.scores) {
+            getValue(strategy1.fqn).updateScorecard(score1, score2, strategy2.fqn)
+            getValue(strategy2.fqn).updateScorecard(score2, score1, strategy1.fqn)
         }
     }
 
@@ -41,5 +52,23 @@ class Match(
                 score2 += rules.bothLosePoints
             }
         }
+    }
+
+    private fun makeHistory(strategy: GameStrategy): List<Decision> {
+        return moves.map {
+            if (strategy.fqn == strategy1.fqn) {
+                it.p1Choice
+            } else {
+                it.p2Choice
+            }
+        }
+    }
+
+    fun getScore(strategy: GameStrategy): Int {
+        return scoreboard.getScore(strategy.fqn)
+    }
+
+    override fun toString(): String {
+        return "Match(strategy1=$strategy1, strategy2=$strategy2, score1=$score1, score2=$score2)"
     }
 }

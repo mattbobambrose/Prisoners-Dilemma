@@ -9,17 +9,7 @@ class Tournament(val strategies: List<GameStrategy>, val generationCount: Int) {
             createTeam(it, strategies.size - 1)
         }
         for (i in 1..generationCount) {
-            generations.add(
-                Generation(
-                    strategies,
-                    5,
-                    3,
-                    1,
-                    0,
-                    200,
-                    matchHistories
-                )
-            )
+            generations.add(Generation(strategies, Rules()))
             generations[i - 1].playMatches()
         }
         teams.sortedByDescending { it.totalPoints }

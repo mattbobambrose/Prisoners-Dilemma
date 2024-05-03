@@ -5,10 +5,10 @@ import kotlinx.coroutines.runBlocking
 import strategy.GameStrategy
 
 class Generation(
-    val strategies: List<GameStrategy>,
-    val rules: Rules,
+    private val strategies: List<GameStrategy>,
+    private val rules: Rules,
 ) {
-    val scoreboard = strategies.associateWith { Scorecard() }
+    private val scoreboard = Scoreboard(strategies)
 
     fun playMatches() {
         val matchChannel = Channel<Match>(CONCURRENT_MATCHES) { }
@@ -17,17 +17,20 @@ class Generation(
                 strategies
                     .pairCombinations()
                     .map { (s1, s2) ->
-                        Match(this@Generation, s1, s2, rules)
+                        Match(s1, s2, scoreboard, rules)
                     }.forEach {
+                        println("Match: $it")
                         matchChannel.send(it)
                     }
+                matchChannel.close()
             }
             for (i in 0 until CONCURRENT_MATCHES) {
                 launch {
                     for (match in matchChannel) {
+                        println("Running match: $match")
                         match.runMatch()
+                        println("$match")
                     }
-                    matchChannel.close()
                 }
             }
         }

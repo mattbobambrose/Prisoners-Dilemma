@@ -20,7 +20,7 @@ class Player(gameStrategy: GameStrategy) {
         } else if (strategy.sneakAttack()) {
             DEFECT
         } else {
-            strategy.chooseOption()
+            strategy.chooseOption(roundNumber, strategy.fqn, myMoves, opponentMoves)
         }
     }
 

@@ -1,4 +1,4 @@
-class Scorecard() {
+class Scorecard {
     var totalPoints: Int = 0
     var winCount: Int = 0
     val winList = mutableListOf<String>()
