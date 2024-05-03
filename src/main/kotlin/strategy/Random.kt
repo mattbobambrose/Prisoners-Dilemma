@@ -2,7 +2,7 @@ package strategy
 
 import Decision
 
-class Random(override val forgiveness: Int, override val sneaky: Int) : GameStrategy() {
+class Random(override val forgiveness: Int = 0, override val sneaky: Int = 0) : GameStrategy() {
     override fun chooseOption(
         roundNumber: Int,
         strategyId: String,

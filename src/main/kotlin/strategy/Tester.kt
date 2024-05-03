@@ -4,7 +4,7 @@ import Decision
 import Decision.COOPERATE
 import Decision.DEFECT
 
-class Tester(override val forgiveness: Int, override val sneaky: Int) : GameStrategy() {
+class Tester(override val forgiveness: Int = 0, override val sneaky: Int = 0) : GameStrategy() {
     private var opponentSecondMove: Decision = DEFECT
     private var chosenStrategy: GameStrategy = this
     override fun chooseOption(

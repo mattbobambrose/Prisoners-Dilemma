@@ -1,8 +1,10 @@
 import com.github.michaelbull.itertools.pairCombinations
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import strategy.GameStrategy
+import kotlin.time.Duration.Companion.seconds
 
 class Generation(
     private val strategies: List<GameStrategy>,
@@ -22,13 +24,16 @@ class Generation(
                         println("Match: $it")
                         matchChannel.send(it)
                     }
+                println()
                 matchChannel.close()
             }
             for (i in 0 until CONCURRENT_MATCHES) {
                 launch {
                     for (match in matchChannel) {
+                        println()
                         println("Running match: $match")
                         match.runMatch()
+                        delay(3.seconds)
                         println("$match")
                     }
                 }
@@ -37,6 +42,6 @@ class Generation(
     }
 
     companion object {
-        private const val CONCURRENT_MATCHES = 5
+        private const val CONCURRENT_MATCHES = 2
     }
 }

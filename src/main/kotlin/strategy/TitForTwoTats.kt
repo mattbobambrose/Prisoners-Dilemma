@@ -4,10 +4,8 @@ import Decision
 import Decision.COOPERATE
 import Decision.DEFECT
 
-class TitForTwoTats(
-    override val forgiveness: Int,
-    override val sneaky: Int
-) : GameStrategy() {
+class TitForTwoTats(override val forgiveness: Int = 0, override val sneaky: Int = 0) :
+    GameStrategy() {
     var oneDefect = false
     override fun chooseOption(
         roundNumber: Int,
@@ -17,8 +15,7 @@ class TitForTwoTats(
     ): Decision {
         if (roundNumber == 0) {
             return COOPERATE
-        }
-        if (oneDefect && opponentMoves[roundNumber - 1] == DEFECT) {
+        } else if (oneDefect && opponentMoves[roundNumber - 1] == DEFECT) {
             oneDefect = false
             return DEFECT
         } else {

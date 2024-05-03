@@ -4,7 +4,7 @@ import Decision
 import Decision.COOPERATE
 import Decision.DEFECT
 
-class TitForTat(override val forgiveness: Int, override val sneaky: Int) : GameStrategy() {
+class TitForTat(override val forgiveness: Int = 0, override val sneaky: Int = 0) : GameStrategy() {
     override fun chooseOption(
         roundNumber: Int,
         strategyId: String,
