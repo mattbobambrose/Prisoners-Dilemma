@@ -1,11 +1,11 @@
 import Decision.COOPERATE
 import HttpObjects.StrategyArgs
 import HttpObjects.StrategyResponse
-import io.ktor.client.*
-import io.ktor.client.call.*
-import io.ktor.client.request.*
-import io.ktor.client.statement.*
-import kotlinx.serialization.encodeToString
+import io.ktor.client.HttpClient
+import io.ktor.client.call.body
+import io.ktor.client.request.post
+import io.ktor.client.request.setBody
+import io.ktor.client.statement.HttpResponse
 import kotlinx.serialization.json.Json
 import strategy.GameStrategy
 
@@ -22,23 +22,15 @@ class Match(
     suspend fun runMatch(client: HttpClient) {
         for (i in 0 until rules.rounds) {
             val response1: HttpResponse =
-                client.post("http://localhost:8080/strategy/$fqn1/play") {
-                    setBody(
-                        Json.encodeToString(
-                            StrategyArgs(i, fqn2, makeHistory(fqn1), makeHistory(fqn2))
-                        )
-                    )
+                client.post("http://localhost:8082/strategy/$fqn1/play") {
+                    setBody(StrategyArgs(i, fqn2, makeHistory(fqn1), makeHistory(fqn2)))
                 }
             val str1 = response1.body<String>()
 //            println("response 1: ${Json.decodeFromString<StrategyResponse>(str1)}")
 
             val response2: HttpResponse =
-                client.post("http://localhost:8080/strategy/$fqn2/play") {
-                    setBody(
-                        Json.encodeToString(
-                            StrategyArgs(i, fqn1, makeHistory(fqn2), makeHistory(fqn1))
-                        )
-                    )
+                client.post("http://localhost:8082/strategy/$fqn2/play") {
+                    setBody(StrategyArgs(i, fqn1, makeHistory(fqn2), makeHistory(fqn1)))
                 }
             val str2 = response2.body<String>()
 //            println("response 2: ${Json.decodeFromString<StrategyResponse>(str2)}")

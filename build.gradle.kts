@@ -30,6 +30,7 @@ dependencies {
     implementation("io.ktor:ktor-server-core-jvm")
     implementation("io.ktor:ktor-server-resources")
     implementation("io.ktor:ktor-server-content-negotiation-jvm")
+    implementation("io.ktor:ktor-client-content-negotiation-jvm")
     implementation("io.ktor:ktor-serialization-kotlinx-json-jvm")
     implementation("io.ktor:ktor-server-html-builder-jvm")
     implementation("org.jetbrains.kotlinx:kotlinx-html-jvm:0.10.1")
