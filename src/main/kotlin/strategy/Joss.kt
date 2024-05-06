@@ -19,5 +19,4 @@ class Joss(override val forgiveness: Int = 0, override val sneaky: Int = 0) : Ga
             opponentMoves[roundNumber - 1]
         }
     }
-
 }

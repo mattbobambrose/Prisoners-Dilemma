@@ -1,36 +1,57 @@
 import Decision.COOPERATE
+import HttpObjects.StrategyArgs
+import HttpObjects.StrategyResponse
+import io.ktor.client.*
+import io.ktor.client.call.*
+import io.ktor.client.request.*
+import io.ktor.client.statement.*
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import strategy.GameStrategy
 
 class Match(
-    private val strategy1: GameStrategy,
-    private val strategy2: GameStrategy,
-    val scoreboard: Scoreboard,
+    private val fqn1: String,
+    private val fqn2: String,
+    private val scoreboard: Scoreboard,
     private val rules: Rules
 ) {
     private val moves = mutableListOf<Moves>()
     private var score1 = 0
     private var score2 = 0
 
-    fun runMatch() {
+    suspend fun runMatch(client: HttpClient) {
         for (i in 0 until rules.rounds) {
-            val d1 = strategy1.chooseOption(
-                i,
-                strategy2.fqn,
-                makeHistory(strategy1),
-                makeHistory(strategy2)
-            )
-            val d2 = strategy2.chooseOption(
-                i,
-                strategy1.fqn,
-                makeHistory(strategy2),
-                makeHistory(strategy1)
-            )
+            val response1: HttpResponse =
+                client.post("http://localhost:8080/strategy/$fqn1/play") {
+                    setBody(
+                        Json.encodeToString(
+                            StrategyArgs(i, fqn2, makeHistory(fqn1), makeHistory(fqn2))
+                        )
+                    )
+                }
+            val str1 = response1.body<String>()
+//            println("response 1: ${Json.decodeFromString<StrategyResponse>(str1)}")
+
+            val response2: HttpResponse =
+                client.post("http://localhost:8080/strategy/$fqn2/play") {
+                    setBody(
+                        Json.encodeToString(
+                            StrategyArgs(i, fqn1, makeHistory(fqn2), makeHistory(fqn1))
+                        )
+                    )
+                }
+            val str2 = response2.body<String>()
+//            println("response 2: ${Json.decodeFromString<StrategyResponse>(str2)}")
+
+            val d1 = Json.decodeFromString<StrategyResponse>(str1).decision
+            val d2 = Json.decodeFromString<StrategyResponse>(str2).decision
+
             moves.add(Moves(d1, d2))
             updateMatchScore(d1, d2)
         }
         with(scoreboard.scores) {
-            getValue(strategy1.fqn).updateScorecard(score1, score2, strategy2.fqn)
-            getValue(strategy2.fqn).updateScorecard(score2, score1, strategy1.fqn)
+            getValue(fqn1).updateScorecard(score1, score2, fqn2)
+            getValue(fqn2).updateScorecard(score2, score1, fqn1)
         }
     }
 
@@ -54,9 +75,9 @@ class Match(
         }
     }
 
-    private fun makeHistory(strategy: GameStrategy): List<Decision> {
+    private fun makeHistory(fqn: String): List<Decision> {
         return moves.map {
-            if (strategy.fqn == strategy1.fqn) {
+            if (fqn == fqn1) {
                 it.p1Choice
             } else {
                 it.p2Choice
@@ -69,6 +90,6 @@ class Match(
     }
 
     override fun toString(): String {
-        return "Match(strategy1=$strategy1, strategy2=$strategy2, score1=$score1, score2=$score2)"
+        return "Match(strategy1=$fqn1, strategy2=$fqn2, score1=$score1, score2=$score2)"
     }
 }

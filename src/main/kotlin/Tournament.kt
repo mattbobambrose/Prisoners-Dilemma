@@ -1,29 +1,27 @@
-import strategy.GameStrategy
+import io.ktor.client.*
+import io.ktor.client.call.*
+import io.ktor.client.engine.cio.*
+import io.ktor.client.request.*
+import kotlinx.coroutines.runBlocking
+import kotlinx.serialization.json.Json
 
-class Tournament(val strategies: List<GameStrategy>, val generationCount: Int) {
+class Tournament(val generationCount: Int) {
     val generations = mutableListOf<Generation>()
-    val matchHistories = mutableMapOf<Team, MutableList<Triple<Team, Int, MatchResultOptions>>>()
 
     fun runSimulation() {
-        val teams = strategies.map {
-            createTeam(it, strategies.size - 1)
-        }
-        for (i in 1..generationCount) {
-            generations.add(Generation(strategies, Rules()))
-            generations[i - 1].playMatches()
-        }
-        teams.sortedByDescending { it.totalPoints }
-            .filter { matchHistories.containsKey(it) }
-            .forEach {
-                it.printResults(matchHistories[it]!!)
-            }
-    }
+        runBlocking {
+            HttpClient(CIO).use { client ->
+                val response = client.get("http://localhost:8080/participants")
+                val str = response.body<String>()
+                val fqns = Json.decodeFromString<List<String>>(str)
 
-    fun createTeam(strategy: GameStrategy, players: Int): Team {
-        val result = Team(strategy)
-        for (i in 0 until players) {
-            result.players.add(Player(strategy))
+                for (i in 0..<generationCount) {
+                    Generation(fqns, Rules()).also {
+                        it.playMatches(client)
+                        generations.add(it)
+                    }
+                }
+            }
         }
-        return result
     }
 }
