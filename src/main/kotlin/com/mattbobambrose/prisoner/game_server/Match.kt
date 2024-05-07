@@ -1,7 +1,12 @@
-import Decision.COOPERATE
-import EndpointNames.STRATEGY
-import HttpObjects.StrategyArgs
-import HttpObjects.StrategyResponse
+package com.mattbobambrose.prisoner.game_server
+
+import com.mattbobambrose.prisoner.common.Decision
+import com.mattbobambrose.prisoner.common.Decision.COOPERATE
+import com.mattbobambrose.prisoner.common.EndpointNames.STRATEGY
+import com.mattbobambrose.prisoner.common.HttpObjects.Rules
+import com.mattbobambrose.prisoner.common.HttpObjects.StrategyArgs
+import com.mattbobambrose.prisoner.common.HttpObjects.StrategyResponse
+import com.mattbobambrose.prisoner.common.StrategyFqn
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.post
@@ -9,12 +14,11 @@ import io.ktor.client.request.setBody
 import io.ktor.client.statement.HttpResponse
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
-import strategy.GameStrategy
 
 class Match(
     private val participantURL: String,
-    private val fqn1: String,
-    private val fqn2: String,
+    private val fqn1: StrategyFqn,
+    private val fqn2: StrategyFqn,
     private val scoreboard: Scoreboard,
     private val rules: Rules
 ) {
@@ -25,13 +29,13 @@ class Match(
     suspend fun runMatch(client: HttpClient) {
         for (i in 0 until rules.rounds) {
             val response1: HttpResponse =
-                client.post("$participantURL/$STRATEGY/$fqn1") {
+                client.post("$participantURL/$STRATEGY/${fqn1.fqn}") {
                     contentType(ContentType.Application.Json)
                     setBody(StrategyArgs(i, fqn2, makeHistory(fqn1), makeHistory(fqn2)))
                 }
 
             val response2: HttpResponse =
-                client.post("$participantURL/$STRATEGY/$fqn2") {
+                client.post("$participantURL/$STRATEGY/${fqn2.fqn}") {
                     contentType(ContentType.Application.Json)
                     setBody(StrategyArgs(i, fqn1, makeHistory(fqn2), makeHistory(fqn1)))
                 }
@@ -68,7 +72,7 @@ class Match(
         }
     }
 
-    private fun makeHistory(fqn: String): List<Decision> {
+    private fun makeHistory(fqn: StrategyFqn): List<Decision> {
         return moves.map {
             if (fqn == fqn1) {
                 it.p1Choice
@@ -78,11 +82,7 @@ class Match(
         }
     }
 
-    fun getScore(strategy: GameStrategy): Int {
-        return scoreboard.getScore(strategy.fqn)
-    }
-
     override fun toString(): String {
-        return "Match(strategy1=$fqn1, strategy2=$fqn2, score1=$score1, score2=$score2)"
+        return "com.mattbobambrose.prisoner.game_server.Match(strategy1=$fqn1, strategy2=$fqn2, score1=$score1, score2=$score2)"
     }
 }

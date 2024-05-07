@@ -1,7 +1,7 @@
-package strategy
+package com.mattbobambrose.prisoner.strategy
 
-import Decision
-import Decision.DEFECT
+import com.mattbobambrose.prisoner.common.Decision
+import com.mattbobambrose.prisoner.common.Decision.DEFECT
 
 class AlwaysDefect : GameStrategy() {
     override fun chooseOption(

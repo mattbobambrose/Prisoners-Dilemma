@@ -1,8 +1,8 @@
-package strategy
+package com.mattbobambrose.prisoner.strategy
 
-import Decision
-import Decision.COOPERATE
-import Decision.DEFECT
+import com.mattbobambrose.prisoner.common.Decision
+import com.mattbobambrose.prisoner.common.Decision.COOPERATE
+import com.mattbobambrose.prisoner.common.Decision.DEFECT
 
 class Friedman : GameStrategy() {
     private var betrayed = false

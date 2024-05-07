@@ -1,7 +1,7 @@
-package strategy
+package com.mattbobambrose.prisoner.strategy
 
-import Decision
-import Decision.COOPERATE
+import com.mattbobambrose.prisoner.common.Decision
+import com.mattbobambrose.prisoner.common.Decision.COOPERATE
 
 class AlwaysCoop : GameStrategy() {
     override fun chooseOption(

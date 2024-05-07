@@ -1,13 +1,14 @@
-package strategy
+package com.mattbobambrose.prisoner.strategy
 
-import Decision
+import com.mattbobambrose.prisoner.common.Decision
+import com.mattbobambrose.prisoner.common.StrategyFqn
 import kotlin.random.Random
 
 abstract class GameStrategy {
     protected val baseName: String = this::class.simpleName ?: "Unknown"
     var forgiveness: Int = 0
     var sneaky: Int = 0
-    val fqn = "$baseName-${nextId(this)}"
+    val fqn = StrategyFqn("$baseName-${nextId(this)}")
 
     abstract fun chooseOption(
         roundNumber: Int,

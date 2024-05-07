@@ -1,7 +1,11 @@
-import EndpointNames.PARTICIPANTS
-import EndpointNames.STRATEGY
-import Game.Companion.strategyList
-import Game.Companion.strategyMap
+package com.mattbobambrose.prisoner.player_server
+
+import com.mattbobambrose.prisoner.common.EndpointNames.PARTICIPANTS
+import com.mattbobambrose.prisoner.common.EndpointNames.STRATEGY
+import com.mattbobambrose.prisoner.common.HttpObjects
+import com.mattbobambrose.prisoner.common.StrategyFqn
+import com.mattbobambrose.prisoner.player_server.Game.Companion.strategyList
+import com.mattbobambrose.prisoner.player_server.Game.Companion.strategyMap
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.application.Application
 import io.ktor.server.application.call
@@ -21,7 +25,6 @@ import kotlinx.html.h3
 import kotlinx.html.li
 import kotlinx.html.p
 import kotlinx.html.ul
-import org.slf4j.event.Level
 
 fun Application.playerModule() {
     install(ContentNegotiation) {
@@ -29,7 +32,9 @@ fun Application.playerModule() {
     }
 
     install(CallLogging) {
-        level = Level.INFO
+        filter {
+            false
+        }
     }
     install(StatusPages) {
         status(io.ktor.http.HttpStatusCode.NotFound) { call, status ->
@@ -46,11 +51,11 @@ fun Application.playerModule() {
             call.respond(strategyList.map { it.fqn })
         }
         post("/$STRATEGY/{fqn}") {
-            val fqn = call.parameters["fqn"] ?: error("invalid strategy")
-            val strategy = strategyMap[fqn] ?: error("invalid fqn: $fqn")
+            val fqn = StrategyFqn(call.parameters["fqn"] ?: error("Invalid strategy"))
+            val strategy = strategyMap[fqn] ?: error("Invalid fqn: $fqn")
             val args = call.receive<HttpObjects.StrategyArgs>()
             val decision = with(args) {
-                strategy.chooseOption(roundNumber, opponentFqn, myMoves, opponentMoves)
+                strategy.chooseOption(roundNumber, opponentFqn.fqn, myMoves, opponentMoves)
             }
             call.respond(HttpObjects.StrategyResponse(decision))
         }

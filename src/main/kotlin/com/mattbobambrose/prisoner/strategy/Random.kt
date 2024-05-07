@@ -1,6 +1,6 @@
-package strategy
+package com.mattbobambrose.prisoner.strategy
 
-import Decision
+import com.mattbobambrose.prisoner.common.Decision
 
 class Random : GameStrategy() {
     override fun chooseOption(
