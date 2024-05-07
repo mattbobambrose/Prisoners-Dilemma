@@ -3,8 +3,7 @@ package strategy
 import Decision
 import Decision.DEFECT
 
-class AlwaysDefect(override val forgiveness: Int = 0, override val sneaky: Int = 0) :
-    GameStrategy() {
+class AlwaysDefect : GameStrategy() {
     override fun chooseOption(
         roundNumber: Int,
         strategyId: String,

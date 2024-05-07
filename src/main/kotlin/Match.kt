@@ -12,6 +12,7 @@ import io.ktor.http.contentType
 import strategy.GameStrategy
 
 class Match(
+    private val participantURL: String,
     private val fqn1: String,
     private val fqn2: String,
     private val scoreboard: Scoreboard,
@@ -24,13 +25,13 @@ class Match(
     suspend fun runMatch(client: HttpClient) {
         for (i in 0 until rules.rounds) {
             val response1: HttpResponse =
-                client.post("http://localhost:8082/$STRATEGY/$fqn1") {
+                client.post("$participantURL/$STRATEGY/$fqn1") {
                     contentType(ContentType.Application.Json)
                     setBody(StrategyArgs(i, fqn2, makeHistory(fqn1), makeHistory(fqn2)))
                 }
 
             val response2: HttpResponse =
-                client.post("http://localhost:8082/$STRATEGY/$fqn2") {
+                client.post("$participantURL/$STRATEGY/$fqn2") {
                     contentType(ContentType.Application.Json)
                     setBody(StrategyArgs(i, fqn1, makeHistory(fqn2), makeHistory(fqn1)))
                 }

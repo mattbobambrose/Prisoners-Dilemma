@@ -1,4 +1,14 @@
-import strategy.*
+import kotlinx.coroutines.runBlocking
+import strategy.AlwaysCoop
+import strategy.AlwaysDefect
+import strategy.DefEveryThree
+import strategy.EveryOther
+import strategy.Friedman
+import strategy.Joss
+import strategy.Random
+import strategy.Tester
+import strategy.TitForTat
+import strategy.TitForTwoTats
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -9,9 +19,12 @@ class AlwaysCoopTests {
     fun `AlwaysCoop vs AlwaysCoop`() {
         val alwaysCoop1 = AlwaysCoop()
         val alwaysCoop2 = AlwaysCoop()
-        val scoreboard = Scoreboard(listOf(alwaysCoop1, alwaysCoop2))
-        val match = Match(alwaysCoop1, alwaysCoop2, scoreboard, rules)
-        match.runMatch()
+        val scoreboard = Scoreboard(listOf(alwaysCoop1.fqn, alwaysCoop2.fqn))
+        val match =
+            Match("http://localhost:8082", alwaysCoop1.fqn, alwaysCoop2.fqn, scoreboard, rules)
+        runBlocking {
+            match.runMatch()
+        }
         assertEquals(30, match.getScore(alwaysCoop1))
         assertEquals(30, match.getScore(alwaysCoop2))
     }

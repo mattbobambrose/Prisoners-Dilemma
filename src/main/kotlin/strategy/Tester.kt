@@ -4,7 +4,7 @@ import Decision
 import Decision.COOPERATE
 import Decision.DEFECT
 
-class Tester(override val forgiveness: Int = 0, override val sneaky: Int = 0) : GameStrategy() {
+class Tester : GameStrategy() {
     private var opponentSecondMove: Decision = DEFECT
     private var chosenStrategy: GameStrategy = this
     override fun chooseOption(
@@ -13,19 +13,23 @@ class Tester(override val forgiveness: Int = 0, override val sneaky: Int = 0) : 
         myMoves: List<Decision>,
         opponentMoves: List<Decision>
     ): Decision {
-        if (roundNumber == 0) {
-            return DEFECT
-        }
-        if (roundNumber == 1) {
-            opponentSecondMove = opponentMoves[1]
-            chosenStrategy = if (opponentSecondMove == COOPERATE) {
-                EveryOther(forgiveness, sneaky)
-            } else {
-                TitForTat(forgiveness, sneaky)
+        when (roundNumber) {
+            0 -> return DEFECT
+            1 -> return COOPERATE
+            2 -> {
+                opponentSecondMove = opponentMoves[1]
+                chosenStrategy = if (opponentSecondMove == COOPERATE) {
+                    EveryOther().also {
+                        it.sneaky = this.sneaky
+                        it.forgiveness = this.forgiveness
+                    }
+                } else {
+                    TitForTat().also {
+                        it.sneaky = this.sneaky
+                        it.forgiveness = this.forgiveness
+                    }
+                }
             }
-        }
-        if (roundNumber == 2 && chosenStrategy is TitForTat) {
-            return COOPERATE
         }
         return chosenStrategy.chooseOption(roundNumber, strategyId, myMoves, opponentMoves)
     }

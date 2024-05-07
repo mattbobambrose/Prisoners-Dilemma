@@ -3,8 +3,12 @@ import io.ktor.client.engine.cio.CIO
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.runBlocking
 
-class Tournament(val fqns: List<String>, val generationCount: Int) {
-    val generations = mutableListOf<Generation>()
+class Tournament(
+    private val participantURL: String,
+    val fqns: List<String>,
+    val generationCount: Int
+) {
+    private val generations = mutableListOf<Generation>()
 
     fun runSimulation() {
         runBlocking {
@@ -16,7 +20,7 @@ class Tournament(val fqns: List<String>, val generationCount: Int) {
             }.use { client ->
                 for (i in 0..<generationCount) {
                     Generation(fqns, Rules()).also {
-                        it.playMatches(client)
+                        it.playMatches(participantURL, client)
                         generations.add(it)
                     }
                 }

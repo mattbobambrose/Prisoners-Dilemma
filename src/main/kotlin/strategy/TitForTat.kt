@@ -4,19 +4,16 @@ import Decision
 import Decision.COOPERATE
 import Decision.DEFECT
 
-class TitForTat(override val forgiveness: Int = 0, override val sneaky: Int = 0) : GameStrategy() {
+class TitForTat : GameStrategy() {
     override fun chooseOption(
         roundNumber: Int,
         strategyId: String,
         myMoves: List<Decision>,
         opponentMoves: List<Decision>
-    ): Decision {
-        if (roundNumber == 0) {
-            return COOPERATE
+    ) =
+        when {
+            roundNumber == 0 -> COOPERATE
+            sneakAttack() -> DEFECT
+            else -> opponentMoves[roundNumber - 1]
         }
-        if (sneakAttack()) {
-            return DEFECT
-        }
-        return opponentMoves[roundNumber - 1]
-    }
 }

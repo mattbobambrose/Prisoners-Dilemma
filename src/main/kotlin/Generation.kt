@@ -1,5 +1,5 @@
 import com.github.michaelbull.itertools.pairCombinations
-import io.ktor.client.*
+import io.ktor.client.HttpClient
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -12,14 +12,14 @@ class Generation(
 ) {
     private val scoreboard = Scoreboard(fqnList)
 
-    fun playMatches(client: HttpClient) {
+    fun playMatches(participantURL: String, client: HttpClient) {
         val matchChannel = Channel<Match>(CONCURRENT_MATCHES) { }
         runBlocking {
             launch {
                 fqnList
                     .pairCombinations()
                     .map { (s1, s2) ->
-                        Match(s1, s2, scoreboard, rules)
+                        Match(participantURL, s1, s2, scoreboard, rules)
                     }.forEach {
                         println("Match: $it")
                         matchChannel.send(it)

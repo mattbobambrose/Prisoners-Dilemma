@@ -4,7 +4,7 @@ import Decision
 import Decision.COOPERATE
 import Decision.DEFECT
 
-class Friedman(override val forgiveness: Int = 0, override val sneaky: Int = 0) : GameStrategy() {
+class Friedman : GameStrategy() {
     private var betrayed = false
     override fun chooseOption(
         roundNumber: Int,
@@ -12,14 +12,10 @@ class Friedman(override val forgiveness: Int = 0, override val sneaky: Int = 0) 
         myMoves: List<Decision>,
         opponentMoves: List<Decision>
     ): Decision {
-        if (roundNumber == 0) {
-            return COOPERATE
-        }
-        if (opponentMoves[roundNumber - 1] == DEFECT) {
-            betrayed = true
-        }
-        if (forgive()) {
-            betrayed = false
+        when {
+            roundNumber == 0 -> return COOPERATE
+            opponentMoves[roundNumber - 1] == DEFECT -> betrayed = true
+            forgive() -> betrayed = false
         }
         return if (betrayed) {
             DEFECT

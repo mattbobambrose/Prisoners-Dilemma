@@ -5,8 +5,8 @@ import kotlin.random.Random
 
 abstract class GameStrategy {
     protected val baseName: String = this::class.simpleName ?: "Unknown"
-    abstract val forgiveness: Int
-    abstract val sneaky: Int
+    var forgiveness: Int = 0
+    var sneaky: Int = 0
     val fqn = "$baseName-${nextId(this)}"
 
     abstract fun chooseOption(

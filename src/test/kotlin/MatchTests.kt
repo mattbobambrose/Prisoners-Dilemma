@@ -13,8 +13,8 @@ class MatchTests {
 
     @Test
     fun `TitForTat vs AlwaysCoop`() {
-        val titForTat = TitForTat(0, 0)
-        val alwaysCoop = AlwaysCoop(0, 0)
+        val titForTat = TitForTat()
+        val alwaysCoop = AlwaysCoop()
         val scoreboard = Scoreboard(listOf(titForTat, alwaysCoop))
         val match = Match(titForTat, alwaysCoop, scoreboard, rules)
         match.runMatch()

@@ -1,4 +1,9 @@
 import EndpointNames.PARTICIPANTS
+import EndpointNames.REGISTER
+import HttpObjects.GameParticipant
+import io.ktor.client.HttpClient
+import io.ktor.client.call.body
+import io.ktor.client.request.get
 import io.ktor.http.HttpStatusCode
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.application.Application
@@ -7,6 +12,7 @@ import io.ktor.server.application.install
 import io.ktor.server.cio.CIO
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.html.respondHtml
+import io.ktor.server.plugins.callloging.CallLogging
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.server.plugins.statuspages.StatusPages
 import io.ktor.server.request.receive
@@ -20,6 +26,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlinx.html.body
 import kotlinx.html.h3
+import org.slf4j.event.Level
 import kotlin.concurrent.thread
 import kotlin.time.Duration.Companion.seconds
 
@@ -28,10 +35,20 @@ object GameEngine {
     fun main(args: Array<String>) {
         thread {
             runBlocking {
-                for (fqns in tournamentRequests) {
-                    println("Received: $fqns")
-                    delay(3.seconds)
-                    Tournament(fqns, 1).runSimulation()
+                HttpClient(io.ktor.client.engine.cio.CIO) {
+                    install(io.ktor.client.plugins.contentnegotiation.ContentNegotiation) {
+                        println("Configuring ContentNegotiation...")
+                        json()
+                    }
+                }.use { client ->
+                    for (participant in tournamentRequests) {
+                        val participantURL = participant.url
+                        println("Received: $participantURL")
+                        delay(3.seconds)
+                        val response = client.get("${participantURL}/$PARTICIPANTS")
+                        val fqns = response.body<List<String>>()
+                        Tournament(participantURL, fqns, 1).runSimulation()
+                    }
                 }
             }
         }
@@ -43,7 +60,7 @@ object GameEngine {
         ).start(wait = true)
     }
 
-    val tournamentRequests = Channel<List<String>>()
+    val tournamentRequests = Channel<GameParticipant>()
 }
 
 fun Application.gameEngineModule() {
@@ -62,11 +79,16 @@ fun Application.gameEngineModule() {
     install(ContentNegotiation) {
         json()
     }
+    install(CallLogging) {
+        level = Level.INFO
+    }
 
     routing {
-        post("/$PARTICIPANTS") {
-            val fqns = call.receive<List<String>>()
-            GameEngine.tournamentRequests.send(fqns)
+        post("/$REGISTER") {
+            val participant = call.receive<GameParticipant>()
+            println("Registered: $participant")
+            GameEngine.tournamentRequests.send(participant)
+            call.respondText("Registered")
         }
         get("/") {
             call.respondText("Hello World1!")
