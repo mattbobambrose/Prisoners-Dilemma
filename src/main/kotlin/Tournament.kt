@@ -10,6 +10,7 @@ class Tournament(val fqns: List<String>, val generationCount: Int) {
         runBlocking {
             HttpClient(CIO) {
                 install(io.ktor.client.plugins.contentnegotiation.ContentNegotiation) {
+                    println("Configuring ContentNegotiation...")
                     json()
                 }
             }.use { client ->

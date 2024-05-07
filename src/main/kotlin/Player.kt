@@ -1,7 +1,8 @@
+import EndpointNames.PARTICIPANTS
+import EndpointNames.STRATEGY
 import HttpObjects.StrategyArgs
 import HttpObjects.StrategyResponse
 import io.ktor.client.HttpClient
-import io.ktor.client.call.body
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
@@ -15,7 +16,7 @@ import io.ktor.server.engine.embeddedServer
 import io.ktor.server.html.respondHtml
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.server.plugins.statuspages.StatusPages
-import io.ktor.server.request.receiveText
+import io.ktor.server.request.receive
 import io.ktor.server.response.respond
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
@@ -35,7 +36,6 @@ import kotlinx.html.h3
 import kotlinx.html.li
 import kotlinx.html.p
 import kotlinx.html.ul
-import kotlinx.serialization.json.Json
 import strategy.AlwaysCoop
 import strategy.AlwaysDefect
 import strategy.GameStrategy
@@ -52,15 +52,10 @@ object Player {
             }
         }.use { client ->
             runBlocking {
-                val list = strategyList.map { it.fqn }
-                println("Wallo world $list")
-                val response = client.post("http://localhost:8081/participants") {
+                client.post("http://localhost:8081/$PARTICIPANTS") {
                     contentType(ContentType.Application.Json)
-                    setBody(list)
+                    setBody(strategyList.map { it.fqn })
                 }
-                val str = response.body<String>()
-                println("response: $str")
-//                println("response: ${Json.decodeFromString<StrategyResponse>(str)}")
             }
         }
 
@@ -89,19 +84,16 @@ fun Application.playerModule() {
     }
 
     routing {
-        post("/strategy/{fqn}/play") {
+        post("/$STRATEGY/{fqn}") {
             val fqn = call.parameters["fqn"] ?: error("invalid strategy")
             val strategy = Player.strategyMap[fqn] ?: error("invalid fqn: $fqn")
-            val body = call.receiveText()
-            val args = Json.decodeFromString<StrategyArgs>(body)
+            val args = call.receive<StrategyArgs>()
             val decision = with(args) {
                 strategy.chooseOption(roundNumber, opponentFqn, myMoves, opponentMoves)
             }
             call.respond(StrategyResponse(decision))
         }
-    }
 
-    routing {
         get("/html-dsl") {
             call.respondHtml {
                 body {

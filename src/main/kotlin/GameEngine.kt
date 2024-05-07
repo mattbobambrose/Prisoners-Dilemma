@@ -1,3 +1,4 @@
+import EndpointNames.PARTICIPANTS
 import io.ktor.http.HttpStatusCode
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.application.Application
@@ -31,12 +32,15 @@ object GameEngine {
                     println("Received: $fqns")
                     delay(3.seconds)
                     Tournament(fqns, 1).runSimulation()
-
                 }
             }
         }
-        embeddedServer(CIO, port = 8081, host = "0.0.0.0", module = Application::gameEngineModule)
-            .start(wait = true)
+        embeddedServer(
+            CIO,
+            port = 8081,
+            host = "0.0.0.0",
+            module = Application::gameEngineModule
+        ).start(wait = true)
     }
 
     val tournamentRequests = Channel<List<String>>()
@@ -60,11 +64,9 @@ fun Application.gameEngineModule() {
     }
 
     routing {
-        post("/participants") {
-            println("I am here")
+        post("/$PARTICIPANTS") {
             val fqns = call.receive<List<String>>()
             GameEngine.tournamentRequests.send(fqns)
-            call.respondText("Thank you!")
         }
         get("/") {
             call.respondText("Hello World1!")
