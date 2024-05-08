@@ -9,8 +9,8 @@ import kotlinx.coroutines.runBlocking
 
 class Tournament(
     private val participantURL: String,
-    val fqns: List<StrategyFqn>,
-    val generationCount: Int
+    private val fqns: List<StrategyFqn>,
+    private val generationCount: Int
 ) {
     private val generations = mutableListOf<Generation>()
 

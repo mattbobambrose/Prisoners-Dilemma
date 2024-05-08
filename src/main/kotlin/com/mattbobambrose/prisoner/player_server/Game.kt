@@ -4,12 +4,10 @@ import com.mattbobambrose.prisoner.common.EndpointNames.REGISTER
 import com.mattbobambrose.prisoner.common.HttpObjects
 import com.mattbobambrose.prisoner.common.HttpObjects.Rules
 import com.mattbobambrose.prisoner.common.StrategyFqn
+import com.mattbobambrose.prisoner.common.setJsonBody
 import com.mattbobambrose.prisoner.strategy.GameStrategy
 import io.ktor.client.HttpClient
 import io.ktor.client.request.post
-import io.ktor.client.request.setBody
-import io.ktor.http.ContentType
-import io.ktor.http.contentType
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.application.Application
 import io.ktor.server.cio.CIO
@@ -42,8 +40,7 @@ class Game(vararg strategies: GameStrategy) {
             }.use { client ->
                 runBlocking {
                     client.post("http://localhost:8081/$REGISTER") {
-                        contentType(ContentType.Application.Json)
-                        setBody(HttpObjects.GameParticipant("http://localhost:8082", rules))
+                        setJsonBody(HttpObjects.GameParticipant("http://localhost:8082", rules))
                     }
                 }
             }

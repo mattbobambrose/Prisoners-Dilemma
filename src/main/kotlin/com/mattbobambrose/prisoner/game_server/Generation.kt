@@ -28,7 +28,6 @@ class Generation(
                         println("com.mattbobambrose.prisoner.game_server.Match: $it")
                         matchChannel.send(it)
                     }
-                println()
                 matchChannel.close()
             }
             for (i in 0 until CONCURRENT_MATCHES) {

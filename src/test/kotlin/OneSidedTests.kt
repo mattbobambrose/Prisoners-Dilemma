@@ -1,14 +1,12 @@
 import com.mattbobambrose.prisoner.common.EndpointNames.REGISTER
 import com.mattbobambrose.prisoner.common.HttpObjects.GameParticipant
+import com.mattbobambrose.prisoner.common.setJsonBody
 import com.mattbobambrose.prisoner.game_server.gameServerModule
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.request.get
 import io.ktor.client.request.post
-import io.ktor.client.request.setBody
 import io.ktor.client.statement.bodyAsText
-import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
-import io.ktor.http.contentType
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.config.MapApplicationConfig
 import io.ktor.server.testing.testApplication
@@ -56,8 +54,7 @@ class OneSidedTests {
             assertEquals("Hello World1!", bodyAsText())
         }
         client.post("/$REGISTER") {
-            contentType(ContentType.Application.Json)
-            setBody(GameParticipant("http://localhost:8082"))
+            setJsonBody(GameParticipant("http://localhost:8082"))
         }.apply {
             assertEquals(HttpStatusCode.OK, status)
             assertEquals("Registered", bodyAsText())
