@@ -20,6 +20,7 @@ fun Application.playerModule() {
             false
         }
     }
+
     install(StatusPages) {
         status(io.ktor.http.HttpStatusCode.NotFound) { call, status ->
             call.respondHtml(status = status) {
@@ -29,5 +30,6 @@ fun Application.playerModule() {
             }
         }
     }
+
     playerServerRouting()
 }

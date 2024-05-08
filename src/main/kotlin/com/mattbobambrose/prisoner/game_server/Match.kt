@@ -12,6 +12,8 @@ import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.post
 import io.ktor.client.statement.HttpResponse
+import kotlinx.coroutines.delay
+import kotlin.time.Duration.Companion.milliseconds
 
 class Match(
     private val participantURL: String,
@@ -35,7 +37,9 @@ class Match(
                 client.post("$participantURL/$STRATEGY/${fqn2.fqn}") {
                     setJsonBody(StrategyArgs(i, fqn1, makeHistory(fqn2), makeHistory(fqn1)))
                 }
-
+            if (i % 10 == 0) {
+                delay(500.milliseconds)
+            }
             val d1 = response1.body<StrategyResponse>().decision
             val d2 = response2.body<StrategyResponse>().decision
 

@@ -5,10 +5,8 @@ import com.mattbobambrose.prisoner.common.HttpObjects.Rules
 import com.mattbobambrose.prisoner.common.StrategyFqn
 import io.ktor.client.HttpClient
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import kotlin.time.Duration.Companion.seconds
 
 class Generation(
     private val fqnList: List<StrategyFqn>,
@@ -25,7 +23,7 @@ class Generation(
                     .map { (s1, s2) ->
                         Match(participantURL, s1, s2, scoreboard, rules)
                     }.forEach {
-                        println("com.mattbobambrose.prisoner.game_server.Match: $it")
+                        println("Match: $it")
                         matchChannel.send(it)
                     }
                 matchChannel.close()
@@ -36,7 +34,7 @@ class Generation(
                         println()
                         println("Running match: $match")
                         match.runMatch(client)
-                        delay(1.seconds)
+//                        delay(1.seconds)
                         println("$match")
                     }
                 }
@@ -45,6 +43,6 @@ class Generation(
     }
 
     companion object {
-        private const val CONCURRENT_MATCHES = 2
+        private const val CONCURRENT_MATCHES = 5
     }
 }

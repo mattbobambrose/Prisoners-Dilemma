@@ -5,6 +5,7 @@ import com.mattbobambrose.prisoner.game_server.Tournament
 import com.mattbobambrose.prisoner.game_server.gameServerModule
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
+import io.ktor.client.plugins.HttpRequestRetry
 import io.ktor.client.request.get
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.application.Application
@@ -27,6 +28,10 @@ object GameServer {
                     install(io.ktor.client.plugins.contentnegotiation.ContentNegotiation) {
                         println("Configuring ContentNegotiation...")
                         json()
+                    }
+                    install(HttpRequestRetry) {
+                        retryOnServerErrors(maxRetries = 5)
+                        exponentialDelay()
                     }
                 }.use { client ->
                     for (participant in tournamentRequests) {

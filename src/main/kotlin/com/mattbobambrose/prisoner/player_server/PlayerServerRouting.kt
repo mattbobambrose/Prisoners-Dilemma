@@ -25,6 +25,7 @@ fun Application.playerServerRouting() {
         get("/$PARTICIPANTS") {
             call.respond(strategyList.map { it.fqn })
         }
+
         post("/$STRATEGY/{fqn}") {
             val fqn = StrategyFqn(call.parameters["fqn"] ?: error("Invalid strategy"))
             val strategy = strategyMap[fqn] ?: error("Invalid fqn: $fqn")
