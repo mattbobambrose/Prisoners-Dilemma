@@ -1,31 +1,31 @@
 package com.mattbobambrose.prisoner.game_server
 
-import com.mattbobambrose.prisoner.common.StrategyFqn
+import com.mattbobambrose.prisoner.common.HttpObjects.StrategyInfo
 
 class Scorecard {
     var totalPoints: Int = 0
     private var winCount: Int = 0
-    private val winList = mutableListOf<StrategyFqn>()
+    private val winList = mutableListOf<StrategyInfo>()
     private var lossCount: Int = 0
-    private val lossList = mutableListOf<StrategyFqn>()
+    private val lossList = mutableListOf<StrategyInfo>()
     private var tieCount: Int = 0
-    private val tieList = mutableListOf<StrategyFqn>()
-    fun updateScorecard(score1: Int, score2: Int, opponentId: StrategyFqn) {
+    private val tieList = mutableListOf<StrategyInfo>()
+    fun updateScorecard(score1: Int, score2: Int, opponentInfo: StrategyInfo) {
         totalPoints += score1
         when {
             score1 > score2 -> {
                 winCount++
-                winList.add(opponentId)
+                winList.add(opponentInfo)
             }
 
             score1 < score2 -> {
                 lossCount++
-                lossList.add(opponentId)
+                lossList.add(opponentInfo)
             }
 
             else -> {
                 tieCount++
-                tieList.add(opponentId)
+                tieList.add(opponentInfo)
             }
         }
     }

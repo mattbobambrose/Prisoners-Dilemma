@@ -12,7 +12,7 @@ abstract class GameStrategy {
 
     abstract fun chooseOption(
         roundNumber: Int,
-        strategyId: String,
+        opponentId: String,
         myMoves: List<Decision>,
         opponentMoves: List<Decision>
     ): Decision

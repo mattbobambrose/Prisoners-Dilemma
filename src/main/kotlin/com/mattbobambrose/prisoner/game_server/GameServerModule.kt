@@ -31,5 +31,7 @@ fun Application.gameServerModule() {
     install(CallLogging) {
         filter { false }
     }
+
     gameServerRouting()
+
 }

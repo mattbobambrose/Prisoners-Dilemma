@@ -9,3 +9,23 @@ value class StrategyFqn(val fqn: String) {
         require(fqn.isNotEmpty()) { "FQN must not be empty" }
     }
 }
+
+@JvmInline
+@Serializable
+value class GameId(val id: String) {
+    init {
+        require(id.isNotEmpty()) { "ID must not be empty" }
+    }
+}
+
+@JvmInline
+@Serializable
+value class Username(val name: String) {
+    init {
+        require(name.isNotEmpty()) { "Name must not be empty" }
+    }
+
+    companion object {
+        val unknownUsername = Username("Unknown")
+    }
+}

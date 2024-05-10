@@ -2,26 +2,26 @@ package com.mattbobambrose.prisoner.game_server
 
 import com.github.michaelbull.itertools.pairCombinations
 import com.mattbobambrose.prisoner.common.HttpObjects.Rules
-import com.mattbobambrose.prisoner.common.StrategyFqn
+import com.mattbobambrose.prisoner.common.HttpObjects.StrategyInfo
 import io.ktor.client.HttpClient
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 
 class Generation(
-    private val fqnList: List<StrategyFqn>,
+    private val infoList: List<StrategyInfo>,
     private val rules: Rules,
 ) {
-    val scoreboard = Scoreboard(fqnList)
+    val scoreboard = Scoreboard(infoList)
 
-    fun playMatches(participantURL: String, client: HttpClient) {
+    fun playMatches(client: HttpClient) {
         val matchChannel = Channel<Match>(CONCURRENT_MATCHES) { }
         runBlocking {
             launch {
-                fqnList
+                infoList
                     .pairCombinations()
                     .map { (s1, s2) ->
-                        Match(participantURL, s1, s2, scoreboard, rules)
+                        Match(s1, s2, scoreboard, rules)
                     }.forEach {
                         println("Match: $it")
                         matchChannel.send(it)
@@ -34,7 +34,6 @@ class Generation(
                         println()
                         println("Running match: $match")
                         match.runMatch(client)
-//                        delay(1.seconds)
                         println("$match")
                     }
                 }

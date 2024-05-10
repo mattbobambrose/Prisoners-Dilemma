@@ -6,7 +6,7 @@ class HttpObjects {
     @Serializable
     data class StrategyArgs(
         val roundNumber: Int,
-        val opponentFqn: StrategyFqn,
+        val opponentInfo: StrategyInfo,
         val myMoves: List<Decision>,
         val opponentMoves: List<Decision>
     )
@@ -16,7 +16,7 @@ class HttpObjects {
 
     @Serializable
     data class GameParticipant(
-        val url: String, val rules: Rules = Rules()
+        val username: Username, val gameId: GameId, val url: String, val rules: Rules = Rules()
     )
 
     @Serializable
@@ -27,5 +27,12 @@ class HttpObjects {
         val lossPoints: Int = 0,
         val rounds: Int = 10,
         val isRandomSize: Boolean = false
+    )
+
+    @Serializable
+    data class StrategyInfo(
+        val url: String,
+        val username: Username,
+        val fqn: StrategyFqn
     )
 }

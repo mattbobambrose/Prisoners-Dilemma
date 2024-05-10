@@ -5,8 +5,8 @@ import com.mattbobambrose.prisoner.common.Decision.COOPERATE
 import com.mattbobambrose.prisoner.common.EndpointNames.STRATEGY
 import com.mattbobambrose.prisoner.common.HttpObjects.Rules
 import com.mattbobambrose.prisoner.common.HttpObjects.StrategyArgs
+import com.mattbobambrose.prisoner.common.HttpObjects.StrategyInfo
 import com.mattbobambrose.prisoner.common.HttpObjects.StrategyResponse
-import com.mattbobambrose.prisoner.common.StrategyFqn
 import com.mattbobambrose.prisoner.common.setJsonBody
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
@@ -16,9 +16,8 @@ import kotlinx.coroutines.delay
 import kotlin.time.Duration.Companion.milliseconds
 
 class Match(
-    private val participantURL: String,
-    private val fqn1: StrategyFqn,
-    private val fqn2: StrategyFqn,
+    private val fqn1: StrategyInfo,
+    private val fqn2: StrategyInfo,
     private val scoreboard: Scoreboard,
     private val rules: Rules
 ) {
@@ -29,12 +28,12 @@ class Match(
     suspend fun runMatch(client: HttpClient) {
         for (i in 0 until rules.rounds) {
             val response1: HttpResponse =
-                client.post("$participantURL/$STRATEGY/${fqn1.fqn}") {
+                client.post("${fqn1.url}/$STRATEGY/${fqn1.fqn.fqn}") {
                     setJsonBody(StrategyArgs(i, fqn2, makeHistory(fqn1), makeHistory(fqn2)))
                 }
 
             val response2: HttpResponse =
-                client.post("$participantURL/$STRATEGY/${fqn2.fqn}") {
+                client.post("${fqn2.url}/$STRATEGY/${fqn2.fqn.fqn}") {
                     setJsonBody(StrategyArgs(i, fqn1, makeHistory(fqn2), makeHistory(fqn1)))
                 }
             if (i % 10 == 0) {
@@ -71,7 +70,7 @@ class Match(
         }
     }
 
-    private fun makeHistory(fqn: StrategyFqn) =
+    private fun makeHistory(fqn: StrategyInfo) =
         moves.map { if (fqn == fqn1) it.p1Choice else it.p2Choice }
 
     override fun toString() =

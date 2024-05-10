@@ -3,6 +3,7 @@ package com.mattbobambrose.prisoner.player_server
 import com.mattbobambrose.prisoner.common.EndpointNames.PARTICIPANTS
 import com.mattbobambrose.prisoner.common.EndpointNames.STRATEGY
 import com.mattbobambrose.prisoner.common.HttpObjects
+import com.mattbobambrose.prisoner.common.HttpObjects.StrategyResponse
 import com.mattbobambrose.prisoner.common.StrategyFqn
 import com.mattbobambrose.prisoner.player_server.Game.Companion.strategyList
 import com.mattbobambrose.prisoner.player_server.Game.Companion.strategyMap
@@ -31,9 +32,9 @@ fun Application.playerServerRouting() {
             val strategy = strategyMap[fqn] ?: error("Invalid fqn: $fqn")
             val args = call.receive<HttpObjects.StrategyArgs>()
             val decision = with(args) {
-                strategy.chooseOption(roundNumber, opponentFqn.fqn, myMoves, opponentMoves)
+                strategy.chooseOption(roundNumber, opponentInfo.fqn.fqn, myMoves, opponentMoves)
             }
-            call.respond(HttpObjects.StrategyResponse(decision))
+            call.respond(StrategyResponse(decision))
         }
 
         get("/html-dsl") {

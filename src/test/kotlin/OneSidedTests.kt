@@ -1,4 +1,5 @@
 import com.mattbobambrose.prisoner.common.EndpointNames.REGISTER
+import com.mattbobambrose.prisoner.common.GameId
 import com.mattbobambrose.prisoner.common.HttpObjects.GameParticipant
 import com.mattbobambrose.prisoner.common.setJsonBody
 import com.mattbobambrose.prisoner.game_server.gameServerModule
@@ -54,7 +55,7 @@ class OneSidedTests {
             assertEquals("Hello World1!", bodyAsText())
         }
         client.post("/$REGISTER") {
-            setJsonBody(GameParticipant("http://localhost:8082"))
+            setJsonBody(GameParticipant(GameId("abc"), "http://localhost:8082"))
         }.apply {
             assertEquals(HttpStatusCode.OK, status)
             assertEquals("Registered", bodyAsText())

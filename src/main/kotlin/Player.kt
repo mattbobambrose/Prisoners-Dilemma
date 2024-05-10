@@ -2,7 +2,6 @@ import com.mattbobambrose.prisoner.common.HttpObjects.Rules
 import com.mattbobambrose.prisoner.player_server.Game
 import com.mattbobambrose.prisoner.strategy.AlwaysCoop
 import com.mattbobambrose.prisoner.strategy.AlwaysDefect
-import com.mattbobambrose.prisoner.strategy.TitForTat
 
 object Player {
     @JvmStatic
@@ -10,6 +9,24 @@ object Player {
         Game(
             AlwaysCoop(),
             AlwaysCoop(),
+//            AlwaysDefect(),
+//            DefEveryThree(),
+//            EveryOther(),
+//            Friedman(),
+//            Joss(),
+//            Random(),
+//            Tester(),
+//            TitForTat(),
+//            TitForTat(),
+//            TitForTat(),
+//            TitForTwoTats()
+        ).apply {
+            play("Mattbob", Rules(rounds = 10))
+        }
+
+        Game(
+            AlwaysCoop(),
+//            AlwaysCoop(),
             AlwaysDefect(),
 //            DefEveryThree(),
 //            EveryOther(),
@@ -17,10 +34,13 @@ object Player {
 //            Joss(),
 //            Random(),
 //            Tester(),
-            TitForTat(),
-            TitForTat(),
+//            TitForTat(),
+//            TitForTat(),
 //            TitForTat(),
 //            TitForTwoTats()
-        ).play(Rules(rounds = 1000))
+        ).apply {
+            play("Paul", Rules(rounds = 10))
+            go()
+        }
     }
 }
