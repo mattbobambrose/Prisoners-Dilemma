@@ -4,20 +4,7 @@ import kotlinx.serialization.Serializable
 
 class HttpObjects {
     @Serializable
-    data class StrategyArgs(
-        val roundNumber: Int,
-        val opponentInfo: StrategyInfo,
-        val myMoves: List<Decision>,
-        val opponentMoves: List<Decision>
-    )
-
-    @Serializable
-    data class StrategyResponse(val decision: Decision)
-
-    @Serializable
-    data class GameParticipant(
-        val username: Username, val gameId: GameId, val url: String, val rules: Rules = Rules()
-    )
+    data class GameParticipant(val username: Username, val gameId: GameId, val fqn: StrategyFqn)
 
     @Serializable
     data class Rules(
@@ -30,9 +17,25 @@ class HttpObjects {
     )
 
     @Serializable
+    data class StrategyArgs(
+        val roundNumber: Int,
+        val opponentInfo: StrategyInfo,
+        val myMoves: List<Decision>,
+        val opponentMoves: List<Decision>
+    )
+
+    @Serializable
     data class StrategyInfo(
         val url: String,
         val username: Username,
         val fqn: StrategyFqn
+    )
+
+    @Serializable
+    data class StrategyResponse(val decision: Decision)
+
+    @Serializable
+    data class TournamentRequest(
+        val username: Username, val gameId: GameId, val url: String, val rules: Rules = Rules()
     )
 }

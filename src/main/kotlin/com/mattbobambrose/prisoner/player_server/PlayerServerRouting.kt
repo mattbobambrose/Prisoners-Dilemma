@@ -1,30 +1,36 @@
 package com.mattbobambrose.prisoner.player_server
 
-import com.mattbobambrose.prisoner.common.EndpointNames.PARTICIPANTS
 import com.mattbobambrose.prisoner.common.EndpointNames.STRATEGY
+import com.mattbobambrose.prisoner.common.EndpointNames.STRATEGYFQNS
 import com.mattbobambrose.prisoner.common.HttpObjects
 import com.mattbobambrose.prisoner.common.HttpObjects.StrategyResponse
 import com.mattbobambrose.prisoner.common.StrategyFqn
-import com.mattbobambrose.prisoner.player_server.Game.Companion.strategyList
-import com.mattbobambrose.prisoner.player_server.Game.Companion.strategyMap
+import com.mattbobambrose.prisoner.player_server.StrategyGroup.Companion.participantMap
+import com.mattbobambrose.prisoner.player_server.StrategyGroup.Companion.strategyMap
 import io.ktor.server.application.Application
 import io.ktor.server.application.call
-import io.ktor.server.html.respondHtml
 import io.ktor.server.request.receive
 import io.ktor.server.response.respond
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.routing
-import kotlinx.html.body
-import kotlinx.html.h1
-import kotlinx.html.li
-import kotlinx.html.p
-import kotlinx.html.ul
 
 fun Application.playerServerRouting() {
     routing {
-        get("/$PARTICIPANTS") {
-            call.respond(strategyList.map { it.fqn })
+        get("/$STRATEGYFQNS") {
+            val gameId = call.request.queryParameters["gameId"] ?: error("Missing gameId")
+            val username = call.request.queryParameters["username"] ?: error("Missing username")
+            println("GameId: $gameId username: $username")
+            val response = participantMap
+                .filter { it.key.id == gameId }
+                .map { participants ->
+                    participants.value
+                        .filter { it.username.name == username }
+                        .map { it.fqn }
+                }
+                .flatten()
+            println("Response: $response")
+            call.respond(response)
         }
 
         post("/$STRATEGY/{fqn}") {
@@ -35,29 +41,6 @@ fun Application.playerServerRouting() {
                 strategy.chooseOption(roundNumber, opponentInfo.fqn.fqn, myMoves, opponentMoves)
             }
             call.respond(StrategyResponse(decision))
-        }
-
-        get("/html-dsl") {
-            call.respondHtml {
-                body {
-                    h1 { +"HTML" }
-                    ul {
-                        for (n in 1..10) {
-                            li { +"$n" }
-                        }
-                    }
-                }
-            }
-        }
-        get("matt.html") {
-            call.respondHtml { // HTML
-                body {
-                    h1 { +"Sample HTML Page" }
-                    p {
-                        +"This is a sample HTML page"
-                    }
-                }
-            }
         }
     }
 }

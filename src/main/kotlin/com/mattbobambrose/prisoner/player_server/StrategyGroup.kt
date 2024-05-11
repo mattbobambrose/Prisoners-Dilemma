@@ -5,6 +5,7 @@ import com.mattbobambrose.prisoner.common.EndpointNames.REGISTER
 import com.mattbobambrose.prisoner.common.GameId
 import com.mattbobambrose.prisoner.common.HttpObjects.GameParticipant
 import com.mattbobambrose.prisoner.common.HttpObjects.Rules
+import com.mattbobambrose.prisoner.common.HttpObjects.TournamentRequest
 import com.mattbobambrose.prisoner.common.StrategyFqn
 import com.mattbobambrose.prisoner.common.Username
 import com.mattbobambrose.prisoner.common.setJsonBody
@@ -19,32 +20,43 @@ import io.ktor.server.engine.embeddedServer
 import kotlinx.coroutines.runBlocking
 import kotlin.concurrent.thread
 
-class Game(vararg strategies: GameStrategy) {
-    init {
-        strategyList.addAll(strategies)
-    }
+class StrategyGroup(vararg strategies: GameStrategy) {
+    val strategyGroupList = strategies.toList()
 
-    fun play(username: String, rules: Rules = Rules()) {
-        register(Username(username), "abc", rules)
-        strategyList.forEach { strategy: GameStrategy ->
-            strategyMap[strategy.fqn] = strategy
+    init {
+        strategies.forEach {
+            strategyMap[it.fqn] = it
         }
     }
 
-    fun go() {
+    fun registerGroup(gameId: String, username: String, rules: Rules = Rules()) {
+        participantMap.putIfAbsent(GameId(gameId), mutableListOf())
+        strategyGroupList.forEach {
+            participantMap[GameId(gameId)]?.add(
+                GameParticipant(
+                    Username(username),
+                    GameId(gameId),
+                    it.fqn
+                )
+            )
+        }
+        register(Username(username), GameId(gameId), rules)
+    }
+
+    fun go(gameId: String) {
         HttpClient(io.ktor.client.engine.cio.CIO) {
             install(io.ktor.client.plugins.contentnegotiation.ContentNegotiation) {
                 json()
             }
         }.use { client ->
             runBlocking {
-                client.get("http://localhost:8081/$GO?gameId=abc")
+                client.get("http://localhost:8081/$GO?gameId=$gameId")
             }
         }
     }
 
     companion object {
-        val strategyList: MutableList<GameStrategy> = mutableListOf()
+        val participantMap: MutableMap<GameId, MutableList<GameParticipant>> = mutableMapOf()
         val strategyMap: MutableMap<StrategyFqn, GameStrategy> = mutableMapOf()
 
         init {
@@ -59,7 +71,7 @@ class Game(vararg strategies: GameStrategy) {
             }
         }
 
-        fun register(username: Username, gameId: String, rules: Rules) {
+        fun register(username: Username, gameId: GameId, rules: Rules) {
             HttpClient(io.ktor.client.engine.cio.CIO) {
                 install(io.ktor.client.plugins.contentnegotiation.ContentNegotiation) {
                     json()
@@ -68,9 +80,9 @@ class Game(vararg strategies: GameStrategy) {
                 runBlocking {
                     client.post("http://localhost:8081/$REGISTER") {
                         setJsonBody(
-                            GameParticipant(
+                            TournamentRequest(
                                 username,
-                                GameId(gameId),
+                                gameId,
                                 "http://localhost:8082",
                                 rules
                             )

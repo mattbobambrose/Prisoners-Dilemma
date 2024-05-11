@@ -1,9 +1,8 @@
-import com.mattbobambrose.prisoner.common.EndpointNames.PARTICIPANTS
+import com.mattbobambrose.prisoner.common.EndpointNames.STRATEGYFQNS
 import com.mattbobambrose.prisoner.common.GameId
-import com.mattbobambrose.prisoner.common.HttpObjects.GameParticipant
 import com.mattbobambrose.prisoner.common.HttpObjects.StrategyInfo
+import com.mattbobambrose.prisoner.common.HttpObjects.TournamentRequest
 import com.mattbobambrose.prisoner.common.StrategyFqn
-import com.mattbobambrose.prisoner.common.Username
 import com.mattbobambrose.prisoner.game_server.Tournament
 import com.mattbobambrose.prisoner.game_server.gameServerModule
 import io.ktor.client.HttpClient
@@ -20,19 +19,28 @@ import java.util.concurrent.ConcurrentHashMap
 import kotlin.concurrent.thread
 
 object GameServer {
-    val tournamentRequests = Channel<GameParticipant>()
-    val pendingRequests = ConcurrentHashMap<GameId, MutableList<GameParticipant>>()
+    val tournamentRequests = Channel<TournamentRequest>()
+    val pendingGameRequestsMap = ConcurrentHashMap<GameId, MutableList<TournamentRequest>>()
+    val playChannel = Channel<GameId>()
 
     @JvmStatic
     fun main(args: Array<String>) {
         thread {
             runBlocking {
-                for (participant in tournamentRequests) {
-                    with(pendingRequests) {
-                        putIfAbsent(participant.gameId, mutableListOf())
-                        get(participant.gameId)?.add(participant)
+                for (request in tournamentRequests) {
+                    with(pendingGameRequestsMap) {
+                        putIfAbsent(request.gameId, mutableListOf())
+                        get(request.gameId)?.add(request)
                             ?: error("Error adding participant")
                     }
+                }
+            }
+        }
+        thread {
+            runBlocking {
+                for (gameId in playChannel) {
+                    println("Playing game $gameId")
+                    playGame(gameId.id)
                 }
             }
         }
@@ -51,26 +59,25 @@ object GameServer {
                 exponentialDelay()
             }
         }.use { client ->
-            val participants = pendingRequests.remove(GameId(gameId))
+            val requests = pendingGameRequestsMap.remove(GameId(gameId))
                 ?: error("No participants for game $gameId")
+            println("Participants size: ${requests.size}")
             val infoList =
-                participants.map { participant ->
-                    val participantURL = participant.url
-                    println("Received: $participantURL")
-                    client.get("${participantURL}/$PARTICIPANTS")
+                requests.map { request ->
+                    val requestURL = request.url
+                    println("Received: $requestURL")
+                    client.get("${requestURL}/$STRATEGYFQNS?gameId=$gameId&username=${request.username.name}")
                         .body<List<StrategyFqn>>()
-                        .map {
-                            StrategyInfo(
-                                participantURL,
-                                Username(participant.username.name),
-                                StrategyFqn(it.fqn)
-                            )
-                        }
+                        .map { StrategyInfo(requestURL, request.username, it) }
                 }.flatten()
+            println("Playing game with $infoList")
+            println("infoList size: ${infoList.size}")
             with(Tournament(infoList, 1)) {
-                runSimulation(participants.first().rules)
+                runSimulation(requests.first().rules)
                 reportScores()
             }
         }
     }
+
+    fun currentGameIds(): List<GameId> = pendingGameRequestsMap.keys().toList()
 }

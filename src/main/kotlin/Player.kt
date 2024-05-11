@@ -1,12 +1,12 @@
 import com.mattbobambrose.prisoner.common.HttpObjects.Rules
-import com.mattbobambrose.prisoner.player_server.Game
+import com.mattbobambrose.prisoner.player_server.StrategyGroup
 import com.mattbobambrose.prisoner.strategy.AlwaysCoop
 import com.mattbobambrose.prisoner.strategy.AlwaysDefect
 
 object Player {
     @JvmStatic
     fun main(args: Array<String>) {
-        Game(
+        StrategyGroup(
             AlwaysCoop(),
             AlwaysCoop(),
 //            AlwaysDefect(),
@@ -21,10 +21,10 @@ object Player {
 //            TitForTat(),
 //            TitForTwoTats()
         ).apply {
-            play("Mattbob", Rules(rounds = 10))
+            registerGroup("abc", "Mattbob", Rules(rounds = 10))
         }
 
-        Game(
+        StrategyGroup(
             AlwaysCoop(),
 //            AlwaysCoop(),
             AlwaysDefect(),
@@ -39,8 +39,7 @@ object Player {
 //            TitForTat(),
 //            TitForTwoTats()
         ).apply {
-            play("Paul", Rules(rounds = 10))
-            go()
+            registerGroup("abc", "Paul", Rules(rounds = 10))
         }
     }
 }
