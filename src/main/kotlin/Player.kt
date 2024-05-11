@@ -21,7 +21,7 @@ object Player {
 //            TitForTat(),
 //            TitForTwoTats()
         ).apply {
-            registerGroup("abc", "Mattbob", Rules(rounds = 10))
+            registerGroup("123", "Mattbob", Rules(rounds = 10))
         }
 
         StrategyGroup(

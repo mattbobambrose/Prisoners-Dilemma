@@ -16,6 +16,10 @@ value class GameId(val id: String) {
     init {
         require(id.isNotEmpty()) { "ID must not be empty" }
     }
+
+    companion object {
+        val unknownGameId = GameId("Unknown")
+    }
 }
 
 @JvmInline

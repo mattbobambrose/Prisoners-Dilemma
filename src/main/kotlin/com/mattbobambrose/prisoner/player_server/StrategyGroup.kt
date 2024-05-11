@@ -3,6 +3,7 @@ package com.mattbobambrose.prisoner.player_server
 import com.mattbobambrose.prisoner.common.EndpointNames.GO
 import com.mattbobambrose.prisoner.common.EndpointNames.REGISTER
 import com.mattbobambrose.prisoner.common.GameId
+import com.mattbobambrose.prisoner.common.GameId.Companion.unknownGameId
 import com.mattbobambrose.prisoner.common.HttpObjects.GameParticipant
 import com.mattbobambrose.prisoner.common.HttpObjects.Rules
 import com.mattbobambrose.prisoner.common.HttpObjects.TournamentRequest
@@ -21,6 +22,7 @@ import kotlinx.coroutines.runBlocking
 import kotlin.concurrent.thread
 
 class StrategyGroup(vararg strategies: GameStrategy) {
+    var groupGameId = unknownGameId
     val strategyGroupList = strategies.toList()
 
     init {
@@ -30,6 +32,7 @@ class StrategyGroup(vararg strategies: GameStrategy) {
     }
 
     fun registerGroup(gameId: String, username: String, rules: Rules = Rules()) {
+        groupGameId = GameId(gameId)
         participantMap.putIfAbsent(GameId(gameId), mutableListOf())
         strategyGroupList.forEach {
             participantMap[GameId(gameId)]?.add(
@@ -43,14 +46,14 @@ class StrategyGroup(vararg strategies: GameStrategy) {
         register(Username(username), GameId(gameId), rules)
     }
 
-    fun go(gameId: String) {
+    fun go() {
         HttpClient(io.ktor.client.engine.cio.CIO) {
             install(io.ktor.client.plugins.contentnegotiation.ContentNegotiation) {
                 json()
             }
         }.use { client ->
             runBlocking {
-                client.get("http://localhost:8081/$GO?gameId=$gameId")
+                client.get("http://localhost:8081/$GO?gameId=${groupGameId.id}")
             }
         }
     }

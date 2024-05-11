@@ -8,6 +8,7 @@ import com.mattbobambrose.prisoner.common.EndpointNames.PLAY
 import com.mattbobambrose.prisoner.common.EndpointNames.REGISTER
 import com.mattbobambrose.prisoner.common.GameId
 import com.mattbobambrose.prisoner.common.HttpObjects.TournamentRequest
+import io.ktor.http.ContentType
 import io.ktor.server.application.Application
 import io.ktor.server.application.call
 import io.ktor.server.html.respondHtml
@@ -18,8 +19,16 @@ import io.ktor.server.routing.post
 import io.ktor.server.routing.routing
 import kotlinx.html.a
 import kotlinx.html.body
+import kotlinx.html.button
+import kotlinx.html.div
 import kotlinx.html.h1
+import kotlinx.html.head
+import kotlinx.html.link
+import kotlinx.html.onClick
 import kotlinx.html.p
+import kotlinx.html.table
+import kotlinx.html.td
+import kotlinx.html.tr
 
 fun Application.gameServerRouting() {
     routing {
@@ -55,17 +64,54 @@ fun Application.gameServerRouting() {
 
         get("/$PLAY") {
             call.respondHtml {
+                head {
+                    link { rel = "stylesheet"; href = "/style.css" }
+                }
                 body {
-                    h1 { +"Prisoner's Dilemma" }
-                    p { +"Click the button to start the game" }
-                    currentGameIds().forEach { gameId ->
-                        a {
-                            href = "/$GO?gameId=${gameId.id}"
-                            +"Play Game $gameId"
+                    div(classes = "playButtons") {
+//                        style = "margin-left: 40px;"
+                        h1 { +"Prisoner's Dilemma" }
+                        p { +"Click the button to start the game" }
+                        table(classes = "playButtons") {
+                            currentGameIds().forEach { gameId ->
+                                tr {
+                                    td {
+                                        button(classes = "playButton") {
+                                            onClick =
+                                                "window.location.href='/go?gameId=${gameId.id}'"
+                                            +"Play Game ${gameId.id}"
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
                 }
             }
+        }
+
+        get("/style.css") {
+            call.respondText(
+                """
+                body {
+                    font-family: Arial, sans-serif;
+                    background-color: #f0f0f0;
+                }
+                h1 {
+                    color: #ff0000;
+                }
+                .playButtons {
+                    margin-left: 20px;
+                }
+                .playButton {
+                    width: 150px;
+                    font-size: 20px;
+                    border-radius: 12px;
+                    background-color: #93c5fd;
+                }
+                """,
+                contentType = ContentType.Text.CSS
+            )
         }
     }
 }
