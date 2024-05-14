@@ -1,5 +1,6 @@
 package com.mattbobambrose.prisoner.game_server
 
+import com.mattbobambrose.prisoner.common.GameId
 import com.mattbobambrose.prisoner.common.HttpObjects.Rules
 import com.mattbobambrose.prisoner.common.HttpObjects.StrategyInfo
 import io.ktor.client.HttpClient
@@ -7,11 +8,12 @@ import io.ktor.client.engine.cio.CIO
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.runBlocking
 
-class Tournament(
+class Game(
+    val gameId: GameId,
     private val infoList: List<StrategyInfo>,
     private val generationCount: Int
 ) {
-    private val generations = mutableListOf<Generation>()
+    val generationList = mutableListOf<Generation>()
 
     fun runSimulation(rules: Rules) {
         runBlocking {
@@ -21,9 +23,9 @@ class Tournament(
                 }
             }.use { client ->
                 for (i in 0..<generationCount) {
-                    Generation(infoList, rules).also {
-                        it.playMatches(client)
-                        generations.add(it)
+                    Generation(this@Game, infoList, rules).also { generation ->
+                        generationList.add(generation)
+                        generation.playMatches(client)
                     }
                 }
             }
@@ -31,7 +33,7 @@ class Tournament(
     }
 
     fun reportScores() {
-        generations.forEachIndexed { index, generation ->
+        generationList.forEachIndexed { index, generation ->
             println("Generation ${index + 1}")
             generation.scoreboard.reportScores()
             println()

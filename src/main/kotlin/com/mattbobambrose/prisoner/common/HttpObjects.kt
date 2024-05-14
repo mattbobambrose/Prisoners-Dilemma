@@ -35,7 +35,7 @@ class HttpObjects {
     data class StrategyResponse(val decision: Decision)
 
     @Serializable
-    data class TournamentRequest(
-        val username: Username, val gameId: GameId, val url: String, val rules: Rules = Rules()
+    data class GameRequest(
+        val gameId: GameId, val username: Username, val url: String, val rules: Rules = Rules()
     )
 }

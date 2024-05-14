@@ -9,10 +9,12 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 
 class Generation(
+    private val parentGame: Game,
     private val infoList: List<StrategyInfo>,
     private val rules: Rules,
 ) {
     val scoreboard = Scoreboard(infoList)
+    val matchList = mutableListOf<Match>()
 
     fun playMatches(client: HttpClient) {
         val matchChannel = Channel<Match>(CONCURRENT_MATCHES) { }
@@ -20,8 +22,11 @@ class Generation(
             launch {
                 infoList
                     .pairCombinations()
-                    .map { (s1, s2) ->
-                        Match(s1, s2, scoreboard, rules)
+                    .map { (info1, info2) ->
+                        Match(this@Generation, info1, info2, scoreboard, rules)
+                            .also { match ->
+                                matchList.add(match)
+                            }
                     }.forEach {
                         println("Match: $it")
                         matchChannel.send(it)
@@ -35,10 +40,15 @@ class Generation(
                         println("Running match: $match")
                         match.runMatch(client)
                         println("$match")
+
                     }
                 }
             }
         }
+    }
+
+    fun sortedScores(): List<Pair<StrategyInfo, Scorecard>> {
+        return scoreboard.sortedScores()
     }
 
     companion object {

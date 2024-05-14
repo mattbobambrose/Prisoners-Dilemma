@@ -1,9 +1,9 @@
 import com.mattbobambrose.prisoner.common.EndpointNames.STRATEGYFQNS
 import com.mattbobambrose.prisoner.common.GameId
+import com.mattbobambrose.prisoner.common.HttpObjects.GameRequest
 import com.mattbobambrose.prisoner.common.HttpObjects.StrategyInfo
-import com.mattbobambrose.prisoner.common.HttpObjects.TournamentRequest
 import com.mattbobambrose.prisoner.common.StrategyFqn
-import com.mattbobambrose.prisoner.game_server.Tournament
+import com.mattbobambrose.prisoner.game_server.Game
 import com.mattbobambrose.prisoner.game_server.gameServerModule
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
@@ -19,15 +19,16 @@ import java.util.concurrent.ConcurrentHashMap
 import kotlin.concurrent.thread
 
 object GameServer {
-    val tournamentRequests = Channel<TournamentRequest>()
-    val pendingGameRequestsMap = ConcurrentHashMap<GameId, MutableList<TournamentRequest>>()
+    val gameRequests = Channel<GameRequest>()
+    private val pendingGameRequestsMap = ConcurrentHashMap<GameId, MutableList<GameRequest>>()
     val playChannel = Channel<GameId>()
+    val gameList = mutableListOf<Game>()
 
     @JvmStatic
     fun main(args: Array<String>) {
         thread {
             runBlocking {
-                for (request in tournamentRequests) {
+                for (request in gameRequests) {
                     with(pendingGameRequestsMap) {
                         putIfAbsent(request.gameId, mutableListOf())
                         get(request.gameId)?.add(request)
@@ -72,12 +73,17 @@ object GameServer {
                 }.flatten()
             println("Playing game with $infoList")
             println("infoList size: ${infoList.size}")
-            with(Tournament(infoList, 1)) {
+            with(Game(GameId(gameId), infoList, 1)) {
+                gameList.add(this)
                 runSimulation(requests.first().rules)
                 reportScores()
             }
         }
     }
 
-    fun currentGameIds(): List<GameId> = pendingGameRequestsMap.keys().toList()
+    fun getGame(gameId: GameId): Game? = gameList.find { it.gameId == gameId }
+
+    fun pendingGames(): List<GameId> = pendingGameRequestsMap.keys.toList()
+
+    fun currentGameIds(): List<GameId> = gameList.map { it.gameId }
 }

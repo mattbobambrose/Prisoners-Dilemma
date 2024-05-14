@@ -2,6 +2,7 @@ import com.mattbobambrose.prisoner.common.HttpObjects.Rules
 import com.mattbobambrose.prisoner.player_server.StrategyGroup
 import com.mattbobambrose.prisoner.strategy.AlwaysCoop
 import com.mattbobambrose.prisoner.strategy.AlwaysDefect
+import com.mattbobambrose.prisoner.strategy.TitForTat
 
 object Player {
     @JvmStatic
@@ -9,19 +10,20 @@ object Player {
         StrategyGroup(
             AlwaysCoop(),
             AlwaysCoop(),
-//            AlwaysDefect(),
+            AlwaysDefect(),
 //            DefEveryThree(),
 //            EveryOther(),
 //            Friedman(),
 //            Joss(),
-//            Random(),
 //            Tester(),
+            TitForTat(),
+//            TitForTat(),
 //            TitForTat(),
 //            TitForTat(),
 //            TitForTat(),
 //            TitForTwoTats()
         ).apply {
-            registerGroup("123", "Mattbob", Rules(rounds = 10))
+            registerGroup("123", "Mattbob", Rules(rounds = 200))
         }
 
         StrategyGroup(

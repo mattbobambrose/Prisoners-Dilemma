@@ -16,8 +16,9 @@ import kotlinx.coroutines.delay
 import kotlin.time.Duration.Companion.milliseconds
 
 class Match(
-    private val fqn1: StrategyInfo,
-    private val fqn2: StrategyInfo,
+    private val parentGeneration: Generation,
+    private val info1: StrategyInfo,
+    private val info2: StrategyInfo,
     private val scoreboard: Scoreboard,
     private val rules: Rules
 ) {
@@ -28,13 +29,13 @@ class Match(
     suspend fun runMatch(client: HttpClient) {
         for (i in 0 until rules.rounds) {
             val response1: HttpResponse =
-                client.post("${fqn1.url}/$STRATEGY/${fqn1.fqn.fqn}") {
-                    setJsonBody(StrategyArgs(i, fqn2, makeHistory(fqn1), makeHistory(fqn2)))
+                client.post("${info1.url}/$STRATEGY/${info1.fqn.fqn}") {
+                    setJsonBody(StrategyArgs(i, info2, makeHistory(info1), makeHistory(info2)))
                 }
 
             val response2: HttpResponse =
-                client.post("${fqn2.url}/$STRATEGY/${fqn2.fqn.fqn}") {
-                    setJsonBody(StrategyArgs(i, fqn1, makeHistory(fqn2), makeHistory(fqn1)))
+                client.post("${info2.url}/$STRATEGY/${info2.fqn.fqn}") {
+                    setJsonBody(StrategyArgs(i, info1, makeHistory(info2), makeHistory(info1)))
                 }
             if (i % 10 == 0) {
                 delay(500.milliseconds)
@@ -45,7 +46,7 @@ class Match(
             moves.add(Moves(d1, d2))
             updateMatchScore(d1, d2)
         }
-        scoreboard.updateScores(fqn1, fqn2, score1, score2)
+        scoreboard.updateScores(info1, info2, score1, score2)
     }
 
     private fun updateMatchScore(d1: Decision, d2: Decision) {
@@ -71,8 +72,8 @@ class Match(
     }
 
     private fun makeHistory(fqn: StrategyInfo) =
-        moves.map { if (fqn == fqn1) it.p1Choice else it.p2Choice }
+        moves.map { if (fqn == info1) it.p1Choice else it.p2Choice }
 
     override fun toString() =
-        "Match(strategy1=$fqn1, strategy2=$fqn2, score1=$score1, score2=$score2)"
+        "Match(strategy1=$info1, strategy2=$info2, score1=$score1, score2=$score2)"
 }

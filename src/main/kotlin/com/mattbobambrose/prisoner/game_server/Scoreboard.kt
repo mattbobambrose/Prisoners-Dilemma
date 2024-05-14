@@ -13,6 +13,11 @@ class Scoreboard(fqnList: List<StrategyInfo>) {
             }
     }
 
+    fun sortedScores(): List<Pair<StrategyInfo, Scorecard>> {
+        return scoresMap.toList()
+            .sortedByDescending { it.second.totalPoints }
+    }
+
     fun updateScores(fqn1: StrategyInfo, fqn2: StrategyInfo, score1: Int, score2: Int) {
         with(scoresMap) {
             getValue(fqn1).updateScorecard(score1, score2, fqn2)

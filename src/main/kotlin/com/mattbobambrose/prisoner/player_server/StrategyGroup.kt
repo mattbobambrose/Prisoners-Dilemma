@@ -5,8 +5,8 @@ import com.mattbobambrose.prisoner.common.EndpointNames.REGISTER
 import com.mattbobambrose.prisoner.common.GameId
 import com.mattbobambrose.prisoner.common.GameId.Companion.unknownGameId
 import com.mattbobambrose.prisoner.common.HttpObjects.GameParticipant
+import com.mattbobambrose.prisoner.common.HttpObjects.GameRequest
 import com.mattbobambrose.prisoner.common.HttpObjects.Rules
-import com.mattbobambrose.prisoner.common.HttpObjects.TournamentRequest
 import com.mattbobambrose.prisoner.common.StrategyFqn
 import com.mattbobambrose.prisoner.common.Username
 import com.mattbobambrose.prisoner.common.setJsonBody
@@ -83,9 +83,9 @@ class StrategyGroup(vararg strategies: GameStrategy) {
                 runBlocking {
                     client.post("http://localhost:8081/$REGISTER") {
                         setJsonBody(
-                            TournamentRequest(
-                                username,
+                            GameRequest(
                                 gameId,
+                                username,
                                 "http://localhost:8082",
                                 rules
                             )

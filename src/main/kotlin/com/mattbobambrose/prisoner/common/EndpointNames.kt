@@ -6,4 +6,5 @@ object EndpointNames {
     const val PLAY = "play"
     const val REGISTER = "register"
     const val STRATEGY = "strategy"
+    const val SCOREBOARD = "scoreboard"
 }
