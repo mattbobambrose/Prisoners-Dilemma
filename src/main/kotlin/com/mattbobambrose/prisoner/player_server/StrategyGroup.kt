@@ -9,7 +9,7 @@ import com.mattbobambrose.prisoner.common.HttpObjects.GameRequest
 import com.mattbobambrose.prisoner.common.HttpObjects.Rules
 import com.mattbobambrose.prisoner.common.StrategyFqn
 import com.mattbobambrose.prisoner.common.Username
-import com.mattbobambrose.prisoner.common.setJsonBody
+import com.mattbobambrose.prisoner.common.Utils.setJsonBody
 import com.mattbobambrose.prisoner.strategy.GameStrategy
 import io.ktor.client.HttpClient
 import io.ktor.client.request.get

@@ -39,4 +39,10 @@ class Game(
             println()
         }
     }
+
+    fun getMatch(id: String): Match? {
+        return generationList
+            .flatMap { it.matchList }
+            .find { it.matchId.id == id }
+    }
 }

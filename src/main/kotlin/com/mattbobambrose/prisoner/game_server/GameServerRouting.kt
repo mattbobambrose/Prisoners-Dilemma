@@ -41,6 +41,14 @@ fun Application.gameServerRouting() {
     routing {
 //        val debug = this@gameServerRouting.environment.config
 //            .propertyOrNull("ktor.deployment.debug")?.getString()?.toBoolean() ?: false
+        get("/") {
+            call.respondHtml { // HTML
+                body {
+                    h1 { +"Prisoner's Dilemma" }
+                    a { href = "/$PLAY"; +"Start Game" }
+                }
+            }
+        }
 
         get("/$GO") {
             println("Go")
@@ -87,7 +95,7 @@ fun Application.gameServerRouting() {
                                                 td {
                                                     a {
                                                         href =
-                                                            "/$MOREDETAILS?gameId=$gameId&fqn=${info.fqn.name}"
+                                                            "/$MOREDETAILS?gameId=$gameId&fqn=${info.fqn}"
                                                         +"More details"
                                                     }
                                                 }
@@ -110,7 +118,7 @@ fun Application.gameServerRouting() {
                 }
                 body {
                     div {
-                        h1 { +"More details for game $gameId" }
+                        h1 { +"More details for fqn $fqn" }
                         table(classes = "scores") {
                             thead {
                                 tr {
@@ -130,17 +138,68 @@ fun Application.gameServerRouting() {
                                     }.forEach {
                                         tr {
                                             td { +"${index + 1}" }
-                                            td { +"${it.getOpponentFqn(fqn)}" }
+                                            td { +it.getOpponentFqn(fqn) }
                                             td { +"${it.getScore(fqn)}" }
-                                            td { +"${it.getOutcome(fqn)}" }
+                                            td { +it.getOutcome(fqn) }
                                             td {
                                                 a {
                                                     href =
-                                                        "/$STRATEGYHISTORY?gameId=$gameId&fqn=$fqn"
+                                                        "/$STRATEGYHISTORY?gameId=$gameId&fqn=$fqn&matchId=${it.matchId}"
                                                     +"Decision history"
                                                 }
                                             }
                                         }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        get("/$STRATEGYHISTORY") {
+            val gameId = call.request.queryParameters["gameId"] ?: error("Missing gameId")
+            val fqn = call.request.queryParameters["fqn"] ?: error("Missing fqn")
+            val matchId = call.request.queryParameters["matchId"] ?: error("Missing matchId")
+            call.respondHtml {
+                head {
+                    link { rel = "stylesheet"; href = "/style.css" }
+                }
+                body {
+                    div {
+                        h1 { +"Strategy history for fqn $fqn" }
+                        table(classes = "scores") {
+                            val game =
+                                GameServer.getGame(GameId(gameId)) ?: error("Game not found")
+                            val match = game.getMatch(matchId) ?: error("Match not found")
+                            thead {
+                                tr {
+                                    td { +"Round number" }
+                                    td { +"Your decision: " }
+                                    td { +"Opponent decision" }
+                                    td { +"Your points" }
+                                    td { +"Opponent points" }
+                                }
+                            }
+                            tbody {
+                                match.moves.forEachIndexed { index, move ->
+                                    val playerOpponentChoice = if (move.p1Info.fqn.name == fqn) {
+                                        move.p1Choice to move.p2Choice
+                                    } else {
+                                        move.p2Choice to move.p1Choice
+                                    }
+                                    val playerOpponentScore = if (move.p1Info.fqn.name == fqn) {
+                                        move.p1Score to move.p2Score
+                                    } else {
+                                        move.p2Score to move.p1Score
+                                    }
+                                    tr {
+                                        td { +"${index + 1}" }
+                                        td { +playerOpponentChoice.first.name }
+                                        td { +playerOpponentChoice.second.name }
+                                        td { +"${playerOpponentScore.first}" }
+                                        td { +"${playerOpponentScore.second}" }
                                     }
                                 }
                             }
@@ -155,15 +214,6 @@ fun Application.gameServerRouting() {
             println("Registered: $participant")
             GameServer.gameRequests.send(participant)
             call.respondText("Registered")
-        }
-
-        get("/") {
-            call.respondHtml { // HTML
-                body {
-                    h1 { +"Prisoner's Dilemma" }
-                    a { href = "/$PLAY"; +"Start Game" }
-                }
-            }
         }
 
         get("/$PLAY") {

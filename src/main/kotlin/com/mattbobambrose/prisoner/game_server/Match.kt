@@ -7,7 +7,9 @@ import com.mattbobambrose.prisoner.common.HttpObjects.Rules
 import com.mattbobambrose.prisoner.common.HttpObjects.StrategyArgs
 import com.mattbobambrose.prisoner.common.HttpObjects.StrategyInfo
 import com.mattbobambrose.prisoner.common.HttpObjects.StrategyResponse
-import com.mattbobambrose.prisoner.common.setJsonBody
+import com.mattbobambrose.prisoner.common.MatchId
+import com.mattbobambrose.prisoner.common.Utils.randomId
+import com.mattbobambrose.prisoner.common.Utils.setJsonBody
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.post
@@ -20,9 +22,10 @@ class Match(
     private val info1: StrategyInfo,
     private val info2: StrategyInfo,
     private val scoreboard: Scoreboard,
-    private val rules: Rules
+    private val rules: Rules,
+    val matchId: MatchId = MatchId(randomId())
 ) {
-    private val moves = mutableListOf<Moves>()
+    val moves = mutableListOf<Moves>()
     private var score1 = 0
     private var score2 = 0
 
@@ -43,8 +46,8 @@ class Match(
             val d1 = response1.body<StrategyResponse>().decision
             val d2 = response2.body<StrategyResponse>().decision
 
-            moves.add(Moves(d1, d2))
             updateMatchScore(d1, d2)
+            moves.add(Moves(info1, info2, d1, d2, score1, score2))
         }
         scoreboard.updateScores(info1, info2, score1, score2)
     }
