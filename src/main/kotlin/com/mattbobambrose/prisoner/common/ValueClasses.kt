@@ -4,9 +4,9 @@ import kotlinx.serialization.Serializable
 
 @JvmInline
 @Serializable
-value class StrategyFqn(val fqn: String) {
+value class StrategyFqn(val name: String) {
     init {
-        require(fqn.isNotEmpty()) { "FQN must not be empty" }
+        require(name.isNotEmpty()) { "FQN must not be empty" }
     }
 }
 

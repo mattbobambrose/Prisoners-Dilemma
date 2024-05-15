@@ -38,7 +38,7 @@ fun Application.playerServerRouting() {
             val strategy = strategyMap[fqn] ?: error("Invalid fqn: $fqn")
             val args = call.receive<HttpObjects.StrategyArgs>()
             val decision = with(args) {
-                strategy.chooseOption(roundNumber, opponentInfo.fqn.fqn, myMoves, opponentMoves)
+                strategy.chooseOption(roundNumber, opponentInfo.fqn.name, myMoves, opponentMoves)
             }
             call.respond(StrategyResponse(decision))
         }

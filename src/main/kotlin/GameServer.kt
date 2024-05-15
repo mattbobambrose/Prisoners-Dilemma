@@ -21,7 +21,7 @@ import kotlin.concurrent.thread
 object GameServer {
     val gameRequests = Channel<GameRequest>()
     private val pendingGameRequestsMap = ConcurrentHashMap<GameId, MutableList<GameRequest>>()
-    val playChannel = Channel<GameId>()
+    val playChannel = Channel<Pair<GameId, Channel<Boolean>>>()
     val gameList = mutableListOf<Game>()
 
     @JvmStatic
@@ -39,9 +39,9 @@ object GameServer {
         }
         thread {
             runBlocking {
-                for (gameId in playChannel) {
-                    println("Playing game $gameId")
-                    playGame(gameId.id)
+                for ((gameId, channel) in playChannel) {
+                    println("Playing game ${gameId.id}")
+                    playGame(gameId.id, channel)
                 }
             }
         }
@@ -49,7 +49,7 @@ object GameServer {
             .start(wait = true)
     }
 
-    suspend fun playGame(gameId: String) {
+    suspend fun playGame(gameId: String, channel: Channel<Boolean>) {
         HttpClient(io.ktor.client.engine.cio.CIO) {
             install(io.ktor.client.plugins.contentnegotiation.ContentNegotiation) {
                 println("Configuring ContentNegotiation...")
@@ -74,6 +74,7 @@ object GameServer {
             println("Playing game with $infoList")
             println("infoList size: ${infoList.size}")
             with(Game(GameId(gameId), infoList, 1)) {
+                channel.send(true)
                 gameList.add(this)
                 runSimulation(requests.first().rules)
                 reportScores()

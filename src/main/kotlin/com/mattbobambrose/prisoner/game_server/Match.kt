@@ -16,7 +16,7 @@ import kotlinx.coroutines.delay
 import kotlin.time.Duration.Companion.milliseconds
 
 class Match(
-    private val parentGeneration: Generation,
+    val parentGeneration: Generation,
     private val info1: StrategyInfo,
     private val info2: StrategyInfo,
     private val scoreboard: Scoreboard,
@@ -29,12 +29,12 @@ class Match(
     suspend fun runMatch(client: HttpClient) {
         for (i in 0 until rules.rounds) {
             val response1: HttpResponse =
-                client.post("${info1.url}/$STRATEGY/${info1.fqn.fqn}") {
+                client.post("${info1.url}/$STRATEGY/${info1.fqn.name}") {
                     setJsonBody(StrategyArgs(i, info2, makeHistory(info1), makeHistory(info2)))
                 }
 
             val response2: HttpResponse =
-                client.post("${info2.url}/$STRATEGY/${info2.fqn.fqn}") {
+                client.post("${info2.url}/$STRATEGY/${info2.fqn.name}") {
                     setJsonBody(StrategyArgs(i, info1, makeHistory(info2), makeHistory(info1)))
                 }
             if (i % 10 == 0) {
@@ -47,6 +47,10 @@ class Match(
             updateMatchScore(d1, d2)
         }
         scoreboard.updateScores(info1, info2, score1, score2)
+    }
+
+    fun getFqnStrings(): List<String> {
+        return listOf(info1.fqn.name, info2.fqn.name)
     }
 
     private fun updateMatchScore(d1: Decision, d2: Decision) {
@@ -76,4 +80,49 @@ class Match(
 
     override fun toString() =
         "Match(strategy1=$info1, strategy2=$info2, score1=$score1, score2=$score2)"
+
+    fun getOpponentFqn(fqn: String) =
+        when (fqn) {
+            info1.fqn.name -> {
+                info2.fqn.name
+            }
+
+            else -> {
+                info1.fqn.name
+            }
+        }
+
+    fun getScore(fqn: String) =
+        when (fqn) {
+            info1.fqn.name -> {
+                score1
+            }
+
+            else -> {
+                score2
+            }
+        }
+
+    fun getOutcome(fqn: String) =
+        when (fqn) {
+            info1.fqn.name -> {
+                if (score1 > score2) {
+                    "Win"
+                } else if (score1 < score2) {
+                    "Loss"
+                } else {
+                    "Draw"
+                }
+            }
+
+            else -> {
+                if (score2 > score1) {
+                    "Win"
+                } else if (score2 < score1) {
+                    "Loss"
+                } else {
+                    "Draw"
+                }
+            }
+        }
 }

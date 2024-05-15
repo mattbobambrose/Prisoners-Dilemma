@@ -4,9 +4,11 @@ import GameServer
 import GameServer.pendingGames
 import GameServer.playChannel
 import com.mattbobambrose.prisoner.common.EndpointNames.GO
+import com.mattbobambrose.prisoner.common.EndpointNames.MOREDETAILS
 import com.mattbobambrose.prisoner.common.EndpointNames.PLAY
 import com.mattbobambrose.prisoner.common.EndpointNames.REGISTER
 import com.mattbobambrose.prisoner.common.EndpointNames.SCOREBOARD
+import com.mattbobambrose.prisoner.common.EndpointNames.STRATEGYHISTORY
 import com.mattbobambrose.prisoner.common.GameId
 import com.mattbobambrose.prisoner.common.HttpObjects.GameRequest
 import io.ktor.http.ContentType
@@ -19,6 +21,7 @@ import io.ktor.server.response.respondText
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.routing
+import kotlinx.coroutines.channels.Channel
 import kotlinx.html.a
 import kotlinx.html.body
 import kotlinx.html.button
@@ -43,7 +46,11 @@ fun Application.gameServerRouting() {
             println("Go")
             val gameId = call.request.queryParameters["gameId"] ?: error("Missing gameId")
             println("GameId: $gameId")
-            playChannel.send(GameId(gameId))
+            with(Channel<Boolean>()) {
+                playChannel.send(GameId(gameId) to this)
+                receive()
+                close()
+            }
             call.respondRedirect("/$SCOREBOARD?gameId=$gameId")
         }
 
@@ -60,7 +67,8 @@ fun Application.gameServerRouting() {
                             thead {
                                 tr {
                                     td { +"Rank" }
-                                    td { +"Name" }
+                                    td { +"Username" }
+                                    td { +"Strategy type" }
                                     td { +"Score" }
                                 }
                             }
@@ -70,13 +78,70 @@ fun Application.gameServerRouting() {
                                 game.generationList.forEachIndexed { genIndex, generation ->
                                     generation
                                         .sortedScores()
-                                        .forEachIndexed { index, (name, scorecard) ->
+                                        .forEachIndexed { index, (info, scorecard) ->
                                             tr {
                                                 td { +"${index + 1}" }
-                                                td { +"$name" }
+                                                td { +info.username.name }
+                                                td { +info.fqn.name }
                                                 td { +"${scorecard.totalPoints}" }
+                                                td {
+                                                    a {
+                                                        href =
+                                                            "/$MOREDETAILS?gameId=$gameId&fqn=${info.fqn.name}"
+                                                        +"More details"
+                                                    }
+                                                }
                                             }
                                         }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        get("/$MOREDETAILS") {
+            val gameId = call.request.queryParameters["gameId"] ?: error("Missing gameId")
+            val fqn = call.request.queryParameters["fqn"] ?: error("Missing info")
+            call.respondHtml {
+                head {
+                    link { rel = "stylesheet"; href = "/style.css" }
+                }
+                body {
+                    div {
+                        h1 { +"More details for game $gameId" }
+                        table(classes = "scores") {
+                            thead {
+                                tr {
+                                    td { +"Generation number" }
+                                    td { +"Opponent strategy" }
+                                    td { +"Points won" }
+                                    td { +"Outcome" }
+                                    td { +"Decision history" }
+                                }
+                            }
+                            tbody {
+                                val game =
+                                    GameServer.getGame(GameId(gameId)) ?: error("Game not found")
+                                game.generationList.forEachIndexed { index, generation ->
+                                    generation.matchList.filter {
+                                        it.getFqnStrings().contains(fqn)
+                                    }.forEach {
+                                        tr {
+                                            td { +"${index + 1}" }
+                                            td { +"${it.getOpponentFqn(fqn)}" }
+                                            td { +"${it.getScore(fqn)}" }
+                                            td { +"${it.getOutcome(fqn)}" }
+                                            td {
+                                                a {
+                                                    href =
+                                                        "/$STRATEGYHISTORY?gameId=$gameId&fqn=$fqn"
+                                                    +"Decision history"
+                                                }
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -96,10 +161,7 @@ fun Application.gameServerRouting() {
             call.respondHtml { // HTML
                 body {
                     h1 { +"Prisoner's Dilemma" }
-                    a {
-                        href = "/$PLAY"
-                        +"Start Game"
-                    }
+                    a { href = "/$PLAY"; +"Start Game" }
                 }
             }
         }
