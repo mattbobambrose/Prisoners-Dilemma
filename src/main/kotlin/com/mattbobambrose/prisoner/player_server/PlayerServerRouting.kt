@@ -20,7 +20,6 @@ fun Application.playerServerRouting() {
         get("/$STRATEGYFQNS") {
             val gameId = call.request.queryParameters["gameId"] ?: error("Missing gameId")
             val username = call.request.queryParameters["username"] ?: error("Missing username")
-            println("GameId: $gameId username: $username")
             val response = participantMap
                 .filter { it.key.id == gameId }
                 .map { participants ->

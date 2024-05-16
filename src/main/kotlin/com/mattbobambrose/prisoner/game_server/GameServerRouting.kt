@@ -15,13 +15,13 @@ import io.ktor.http.ContentType
 import io.ktor.server.application.Application
 import io.ktor.server.application.call
 import io.ktor.server.html.respondHtml
+import io.ktor.server.http.content.staticResources
 import io.ktor.server.request.receive
 import io.ktor.server.response.respondRedirect
 import io.ktor.server.response.respondText
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.routing
-import kotlinx.coroutines.channels.Channel
 import kotlinx.html.a
 import kotlinx.html.body
 import kotlinx.html.button
@@ -31,6 +31,7 @@ import kotlinx.html.head
 import kotlinx.html.link
 import kotlinx.html.onClick
 import kotlinx.html.p
+import kotlinx.html.script
 import kotlinx.html.table
 import kotlinx.html.tbody
 import kotlinx.html.td
@@ -39,8 +40,7 @@ import kotlinx.html.tr
 
 fun Application.gameServerRouting() {
     routing {
-//        val debug = this@gameServerRouting.environment.config
-//            .propertyOrNull("ktor.deployment.debug")?.getString()?.toBoolean() ?: false
+        staticResources("/static", "static")
         get("/") {
             call.respondHtml { // HTML
                 body {
@@ -54,10 +54,9 @@ fun Application.gameServerRouting() {
             println("Go")
             val gameId = call.request.queryParameters["gameId"] ?: error("Missing gameId")
             println("GameId: $gameId")
-            with(Channel<Boolean>()) {
+            with(SuspendingCountDownLatch()) {
                 playChannel.send(GameId(gameId) to this)
-                receive()
-                close()
+                await()
             }
             call.respondRedirect("/$SCOREBOARD?gameId=$gameId")
         }
@@ -67,6 +66,7 @@ fun Application.gameServerRouting() {
             call.respondHtml {
                 head {
                     link { rel = "stylesheet"; href = "/style.css" }
+                    script { type = "text/javascript"; src = "static/surprise.js" }
                 }
                 body {
                     div {

@@ -4,6 +4,7 @@ import com.mattbobambrose.prisoner.common.HttpObjects.GameRequest
 import com.mattbobambrose.prisoner.common.HttpObjects.StrategyInfo
 import com.mattbobambrose.prisoner.common.StrategyFqn
 import com.mattbobambrose.prisoner.game_server.Game
+import com.mattbobambrose.prisoner.game_server.SuspendingCountDownLatch
 import com.mattbobambrose.prisoner.game_server.gameServerModule
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
@@ -21,7 +22,7 @@ import kotlin.concurrent.thread
 object GameServer {
     val gameRequests = Channel<GameRequest>()
     private val pendingGameRequestsMap = ConcurrentHashMap<GameId, MutableList<GameRequest>>()
-    val playChannel = Channel<Pair<GameId, Channel<Boolean>>>()
+    val playChannel = Channel<Pair<GameId, SuspendingCountDownLatch>>()
     val gameList = mutableListOf<Game>()
 
     @JvmStatic
@@ -39,9 +40,9 @@ object GameServer {
         }
         thread {
             runBlocking {
-                for ((gameId, channel) in playChannel) {
+                for ((gameId, latch) in playChannel) {
                     println("Playing game ${gameId.id}")
-                    playGame(gameId.id, channel)
+                    playGame(gameId, latch)
                 }
             }
         }
@@ -49,7 +50,7 @@ object GameServer {
             .start(wait = true)
     }
 
-    suspend fun playGame(gameId: String, channel: Channel<Boolean>) {
+    suspend fun playGame(gameId: GameId, latch: SuspendingCountDownLatch) {
         HttpClient(io.ktor.client.engine.cio.CIO) {
             install(io.ktor.client.plugins.contentnegotiation.ContentNegotiation) {
                 println("Configuring ContentNegotiation...")
@@ -60,21 +61,21 @@ object GameServer {
                 exponentialDelay()
             }
         }.use { client ->
-            val requests = pendingGameRequestsMap.remove(GameId(gameId))
-                ?: error("No participants for game $gameId")
+            val requests = pendingGameRequestsMap.remove(gameId)
+                ?: error("No participants for game ${gameId.id}")
             println("Participants size: ${requests.size}")
             val infoList =
                 requests.map { request ->
                     val requestURL = request.url
                     println("Received: $requestURL")
-                    client.get("${requestURL}/$STRATEGYFQNS?gameId=$gameId&username=${request.username.name}")
+                    client.get("${requestURL}/$STRATEGYFQNS?gameId=${gameId.id}&username=${request.username.name}")
                         .body<List<StrategyFqn>>()
                         .map { StrategyInfo(requestURL, request.username, it) }
                 }.flatten()
             println("Playing game with $infoList")
             println("infoList size: ${infoList.size}")
-            with(Game(GameId(gameId), infoList, 1)) {
-                channel.send(true)
+            with(Game(gameId, infoList, 1)) {
+                latch.countDown()
                 gameList.add(this)
                 runSimulation(requests.first().rules)
                 reportScores()
