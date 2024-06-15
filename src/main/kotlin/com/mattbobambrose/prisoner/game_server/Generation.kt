@@ -15,6 +15,7 @@ class Generation(
 ) {
     val scoreboard = Scoreboard(infoList)
     val matchList = mutableListOf<Match>()
+    var isFinished = false
 
     fun playMatches(client: HttpClient) {
         val matchChannel = Channel<Match>(CONCURRENT_MATCHES) { }
@@ -40,14 +41,17 @@ class Generation(
                         println("Running match: $match")
                         match.runMatch(client)
                         println("$match")
-
                     }
                 }
             }
         }
+        if (matchList.all { it.isFinished }) {
+            isFinished = true
+            println("Generation finished")
+        }
     }
 
-    fun sortedScores(): List<Pair<StrategyInfo, Scorecard>> {
+    fun sortedScores(): List<Scorecard> {
         return scoreboard.sortedScores()
     }
 

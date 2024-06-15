@@ -1,5 +1,5 @@
 package com.mattbobambrose.prisoner.common
 
-enum class Decision {
-    COOPERATE, DEFECT
+enum class Decision(val s: String) {
+    COOPERATE("Cooperate"), DEFECT("Defect")
 }

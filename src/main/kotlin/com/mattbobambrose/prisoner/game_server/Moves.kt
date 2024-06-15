@@ -8,6 +8,8 @@ data class Moves(
     val p2Info: StrategyInfo,
     val p1Choice: Decision,
     val p2Choice: Decision,
+    val p1Increase: Int,
+    val p2Increase: Int,
     val p1Score: Int,
     val p2Score: Int
 )

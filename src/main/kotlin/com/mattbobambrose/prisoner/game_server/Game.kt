@@ -14,6 +14,8 @@ class Game(
     private val generationCount: Int
 ) {
     val generationList = mutableListOf<Generation>()
+    var isFinished = false
+    var currentInfo = infoList
 
     fun runSimulation(rules: Rules) {
         runBlocking {
@@ -23,13 +25,20 @@ class Game(
                 }
             }.use { client ->
                 for (i in 0..<generationCount) {
-                    Generation(this@Game, infoList, rules).also { generation ->
+                    Generation(this@Game, currentInfo, rules).also { generation ->
                         generationList.add(generation)
                         generation.playMatches(client)
+//                        currentInfo = generation.createNewInfoList()
                     }
                 }
             }
         }
+        assert(generationList.all { it.isFinished })
+        isFinished = true
+    }
+
+    private fun Generation.createNewInfoList(): List<StrategyInfo> {
+        return currentInfo
     }
 
     fun reportScores() {

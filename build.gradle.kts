@@ -1,10 +1,16 @@
-plugins {
-    kotlin("jvm") version "1.9.24"
-    id("io.ktor.plugin") version "2.3.10"
-    id("org.jetbrains.kotlin.plugin.serialization") version "1.9.24"
-}
+val ktor_version: String by project
+val kotlin_version: String by project
+val logback_version: String by project
+val coroutinesVersion: String by project
+val iterVersion: String by project
 
+plugins {
+    kotlin("jvm") version "2.0.0"
+    id("io.ktor.plugin") version "2.3.11"
+    id("org.jetbrains.kotlin.plugin.serialization") version "2.0.0"
+}
 group = "org.example"
+
 version = "1.0-SNAPSHOT"
 
 repositories {
@@ -17,12 +23,6 @@ application {
     val isDevelopment: Boolean = project.ext.has("development")
     applicationDefaultJvmArgs = listOf("-Dio.ktor.development=$isDevelopment")
 }
-
-val ktor_version: String by project
-val kotlin_version: String by project
-val logback_version: String by project
-val coroutinesVersion: String by project
-val iterVersion: String by project
 
 dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion")

@@ -74,7 +74,7 @@ object GameServer {
                 }.flatten()
             println("Playing game with $infoList")
             println("infoList size: ${infoList.size}")
-            with(Game(gameId, infoList, 1)) {
+            with(Game(gameId, infoList, 2)) {
                 latch.countDown()
                 gameList.add(this)
                 runSimulation(requests.first().rules)

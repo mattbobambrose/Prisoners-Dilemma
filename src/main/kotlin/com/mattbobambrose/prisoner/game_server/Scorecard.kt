@@ -2,7 +2,7 @@ package com.mattbobambrose.prisoner.game_server
 
 import com.mattbobambrose.prisoner.common.HttpObjects.StrategyInfo
 
-class Scorecard {
+class Scorecard(val strategyInfo: StrategyInfo) {
     var totalPoints: Int = 0
     private var winCount: Int = 0
     private val winList = mutableListOf<StrategyInfo>()
@@ -10,8 +10,13 @@ class Scorecard {
     private val lossList = mutableListOf<StrategyInfo>()
     private var tieCount: Int = 0
     private val tieList = mutableListOf<StrategyInfo>()
-    fun updateScorecard(score1: Int, score2: Int, opponentInfo: StrategyInfo) {
-        totalPoints += score1
+    fun updateScorecard(
+        score1: Int,
+        score2: Int,
+        increase: Int,
+        opponentInfo: StrategyInfo
+    ) {
+        totalPoints += increase
         when {
             score1 > score2 -> {
                 winCount++

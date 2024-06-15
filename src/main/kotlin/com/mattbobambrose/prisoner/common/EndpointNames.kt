@@ -9,4 +9,5 @@ object EndpointNames {
     const val SCOREBOARD = "scoreboard"
     const val MOREDETAILS = "more-details"
     const val STRATEGYHISTORY = "strategy-history"
+    const val CSS_SOURCE = "/css/style.css"
 }

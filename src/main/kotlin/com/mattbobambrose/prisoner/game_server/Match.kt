@@ -1,5 +1,6 @@
 package com.mattbobambrose.prisoner.game_server
 
+import com.mattbobambrose.prisoner.common.Configuration.transportType
 import com.mattbobambrose.prisoner.common.Decision
 import com.mattbobambrose.prisoner.common.Decision.COOPERATE
 import com.mattbobambrose.prisoner.common.EndpointNames.STRATEGY
@@ -10,12 +11,47 @@ import com.mattbobambrose.prisoner.common.HttpObjects.StrategyResponse
 import com.mattbobambrose.prisoner.common.MatchId
 import com.mattbobambrose.prisoner.common.Utils.randomId
 import com.mattbobambrose.prisoner.common.Utils.setJsonBody
+import com.mattbobambrose.prisoner.game_server.TransportType.GRPC
+import com.mattbobambrose.prisoner.game_server.TransportType.KRPC
+import com.mattbobambrose.prisoner.game_server.TransportType.REST
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.post
-import io.ktor.client.statement.HttpResponse
 import kotlinx.coroutines.delay
 import kotlin.time.Duration.Companion.milliseconds
+
+enum class TransportType {
+    REST, KRPC, GRPC
+}
+
+interface CallTransport {
+    suspend fun requestDecision(
+        client: HttpClient,
+        info: StrategyInfo,
+        opponentInfo: StrategyInfo,
+        round: Int
+    ): Decision
+}
+
+class RestTransport(val match: Match) : CallTransport {
+    override suspend fun requestDecision(
+        client: HttpClient,
+        info: StrategyInfo,
+        opponentInfo: StrategyInfo,
+        round: Int
+    ): Decision {
+        return client.post("${info.url}/$STRATEGY/${info.fqn.name}") {
+            setJsonBody(
+                StrategyArgs(
+                    round,
+                    opponentInfo,
+                    match.makeHistory(info),
+                    match.makeHistory(opponentInfo)
+                )
+            )
+        }.body<StrategyResponse>().decision
+    }
+}
 
 class Match(
     val parentGeneration: Generation,
@@ -26,59 +62,70 @@ class Match(
     val matchId: MatchId = MatchId(randomId())
 ) {
     val moves = mutableListOf<Moves>()
+    private var increase1 = 0
+    private var increase2 = 0
     private var score1 = 0
     private var score2 = 0
+    var isRunning = false
+    var isFinished = false
 
     suspend fun runMatch(client: HttpClient) {
+        isRunning = true
+        val serverImpl: CallTransport =
+            when (transportType) {
+                REST -> RestTransport(this)
+                GRPC -> throw NotImplementedError("gRPC not supported")
+                KRPC -> throw NotImplementedError("kRPC not supported")
+            }
         for (i in 0 until rules.rounds) {
-            val response1: HttpResponse =
-                client.post("${info1.url}/$STRATEGY/${info1.fqn.name}") {
-                    setJsonBody(StrategyArgs(i, info2, makeHistory(info1), makeHistory(info2)))
-                }
+            val d1 = serverImpl.requestDecision(client, info1, info2, i)
+            val d2 = serverImpl.requestDecision(client, info2, info1, i)
 
-            val response2: HttpResponse =
-                client.post("${info2.url}/$STRATEGY/${info2.fqn.name}") {
-                    setJsonBody(StrategyArgs(i, info1, makeHistory(info2), makeHistory(info1)))
-                }
+            updateIncreases(d1, d2)
+            updateScore()
+            moves.add(Moves(info1, info2, d1, d2, increase1, increase2, score1, score2))
+
             if (i % 10 == 0) {
                 delay(500.milliseconds)
             }
-            val d1 = response1.body<StrategyResponse>().decision
-            val d2 = response2.body<StrategyResponse>().decision
-
-            updateMatchScore(d1, d2)
-            moves.add(Moves(info1, info2, d1, d2, score1, score2))
         }
-        scoreboard.updateScores(info1, info2, score1, score2)
+        isFinished = true
+        println("Match ${matchId.id} finished")
+    }
+
+    private fun updateScore() {
+        score1 += increase1
+        score2 += increase2
+        scoreboard.updateScores(info1, info2, score1, score2, increase1, increase2)
     }
 
     fun getFqnStrings(): List<String> {
         return listOf(info1.fqn.name, info2.fqn.name)
     }
 
-    private fun updateMatchScore(d1: Decision, d2: Decision) {
+    private fun updateIncreases(d1: Decision, d2: Decision) {
         with(rules) {
             if (d1 == COOPERATE) {
                 if (d2 == COOPERATE) {
-                    score1 += bothWinPoints
-                    score2 += bothWinPoints
+                    increase1 = bothWinPoints
+                    increase2 = bothWinPoints
                 } else {
-                    score1 += lossPoints
-                    score2 += winPoints
+                    increase1 = lossPoints
+                    increase2 = winPoints
                 }
             } else {
                 if (d2 == COOPERATE) {
-                    score1 += winPoints
-                    score2 += lossPoints
+                    increase1 = winPoints
+                    increase2 = lossPoints
                 } else {
-                    score1 += bothLosePoints
-                    score2 += bothLosePoints
+                    increase1 = bothLosePoints
+                    increase2 = bothLosePoints
                 }
             }
         }
     }
 
-    private fun makeHistory(fqn: StrategyInfo) =
+    internal fun makeHistory(fqn: StrategyInfo) =
         moves.map { if (fqn == info1) it.p1Choice else it.p2Choice }
 
     override fun toString() =
@@ -106,26 +153,40 @@ class Match(
             }
         }
 
-    fun getOutcome(fqn: String) =
+    fun getOutcome(isFinished: Boolean, fqn: String) =
         when (fqn) {
-            info1.fqn.name -> {
-                if (score1 > score2) {
-                    "Win"
-                } else if (score1 < score2) {
-                    "Loss"
-                } else {
-                    "Draw"
-                }
-            }
+            info1.fqn.name -> makeStateString(isFinished, score1, score2)
+            else -> makeStateString(isFinished, score2, score1)
+        }
 
-            else -> {
-                if (score2 > score1) {
-                    "Win"
-                } else if (score2 < score1) {
-                    "Loss"
-                } else {
-                    "Draw"
-                }
+    fun makeStateString(isFinished: Boolean, score1: Int, score2: Int): String {
+        return if (score1 > score2) {
+            if (isFinished) {
+                "Win"
+            } else {
+                "Winning"
             }
+        } else if (score1 < score2) {
+            if (isFinished) {
+                "Loss"
+            } else {
+                "Losing"
+            }
+        } else {
+            if (isFinished) {
+                "Draw"
+            } else {
+                "Tied"
+            }
+        }
+    }
+
+    fun getFinishString() =
+        if (isFinished) {
+            "Finished"
+        } else if (isRunning) {
+            "Running"
+        } else {
+            "Not Started"
         }
 }
