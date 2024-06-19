@@ -3,8 +3,7 @@ package com.mattbobambrose.prisoner.game_server
 import com.github.michaelbull.itertools.pairCombinations
 import com.mattbobambrose.prisoner.common.HttpObjects.Rules
 import com.mattbobambrose.prisoner.common.HttpObjects.StrategyInfo
-import io.ktor.client.HttpClient
-import kotlinx.coroutines.channels.Channel
+import com.mattbobambrose.prisoner.common.ParallelForEach.forEach
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 
@@ -17,8 +16,7 @@ class Generation(
     val matchList = mutableListOf<Match>()
     var isFinished = false
 
-    fun playMatches(client: HttpClient) {
-        val matchChannel = Channel<Match>(CONCURRENT_MATCHES) { }
+    fun playMatches(client: ClientContext) {
         runBlocking {
             launch {
                 infoList
@@ -28,21 +26,12 @@ class Generation(
                             .also { match ->
                                 matchList.add(match)
                             }
-                    }.forEach {
-                        println("Match: $it")
-                        matchChannel.send(it)
-                    }
-                matchChannel.close()
-            }
-            for (i in 0 until CONCURRENT_MATCHES) {
-                launch {
-                    for (match in matchChannel) {
+                    }.forEach(CONCURRENT_MATCHES) {
                         println()
-                        println("Running match: $match")
-                        match.runMatch(client)
-                        println("$match")
+                        println("Running match: $it")
+                        it.runMatch(client)
+                        println("$it")
                     }
-                }
             }
         }
         if (matchList.all { it.isFinished }) {

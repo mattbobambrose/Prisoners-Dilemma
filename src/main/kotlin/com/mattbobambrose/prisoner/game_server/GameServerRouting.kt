@@ -1,8 +1,8 @@
 package com.mattbobambrose.prisoner.game_server
 
 import GameServer
-import GameServer.pendingGames
-import GameServer.playChannel
+import GameServer.Companion.pendingGames
+import GameServer.Companion.playChannel
 import com.mattbobambrose.prisoner.common.EndpointNames.CSS_SOURCE
 import com.mattbobambrose.prisoner.common.EndpointNames.GO
 import com.mattbobambrose.prisoner.common.EndpointNames.MOREDETAILS
@@ -95,7 +95,7 @@ fun Application.gameServerRouting() {
         get("/$SCOREBOARD") {
             val gameId = call.request.queryParameters["gameId"] ?: error("Missing gameId")
             val game =
-                GameServer.getGame(GameId(gameId)) ?: error("Game not found")
+                GameServer.findGame(GameId(gameId)) ?: error("Game not found")
             call.respondHtml {
                 head {
                     link { rel = "stylesheet"; href = CSS_SOURCE }
@@ -154,7 +154,7 @@ fun Application.gameServerRouting() {
             val genIndex = call.request.queryParameters["genIndex"] ?: error("Missing genIndex")
             val fqn = call.request.queryParameters["fqn"] ?: error("Missing info")
             val game =
-                GameServer.getGame(GameId(gameId)) ?: error("Game not found")
+                GameServer.findGame(GameId(gameId)) ?: error("Game not found")
             val matchList: List<Match> =
                 buildList {
                     game.generationList.forEach { generation ->
@@ -222,7 +222,7 @@ fun Application.gameServerRouting() {
 
         get("/$STRATEGYHISTORY") {
             val gameId = call.request.queryParameters["gameId"] ?: error("Missing gameId")
-            val game = GameServer.getGame(GameId(gameId)) ?: error("Game not found")
+            val game = GameServer.findGame(GameId(gameId)) ?: error("Game not found")
             val fqn = call.request.queryParameters["fqn"] ?: error("Missing fqn")
             val matchId = call.request.queryParameters["matchId"] ?: error("Missing matchId")
             val match = game.getMatch(matchId) ?: error("Match not found")

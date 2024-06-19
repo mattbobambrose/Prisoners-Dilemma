@@ -1,49 +1,26 @@
 package com.mattbobambrose.prisoner.player_server
 
+import com.mattbobambrose.prisoner.common.Constants.GAME_SERVER_PORT
 import com.mattbobambrose.prisoner.common.EndpointNames.GO
-import com.mattbobambrose.prisoner.common.EndpointNames.REGISTER
-import com.mattbobambrose.prisoner.common.GameId
-import com.mattbobambrose.prisoner.common.GameId.Companion.unknownGameId
 import com.mattbobambrose.prisoner.common.HttpObjects.GameParticipant
-import com.mattbobambrose.prisoner.common.HttpObjects.GameRequest
-import com.mattbobambrose.prisoner.common.HttpObjects.Rules
-import com.mattbobambrose.prisoner.common.StrategyFqn
 import com.mattbobambrose.prisoner.common.Username
-import com.mattbobambrose.prisoner.common.Utils.setJsonBody
+import com.mattbobambrose.prisoner.player_server.PlayerServer.Companion.competitionMap
+import com.mattbobambrose.prisoner.player_server.PlayerServer.Companion.strategyMap
 import com.mattbobambrose.prisoner.strategy.GameStrategy
 import io.ktor.client.HttpClient
 import io.ktor.client.request.get
-import io.ktor.client.request.post
 import io.ktor.serialization.kotlinx.json.json
-import io.ktor.server.application.Application
-import io.ktor.server.cio.CIO
-import io.ktor.server.engine.embeddedServer
 import kotlinx.coroutines.runBlocking
-import kotlin.concurrent.thread
 
-class StrategyGroup(vararg strategies: GameStrategy) {
-    var groupGameId = unknownGameId
-    val strategyGroupList = strategies.toList()
+class StrategyGroup(val competition: Competition, val username: Username, val url: String) {
+    val strategyList = mutableListOf<GameStrategy>()
 
-    init {
-        strategies.forEach {
-            strategyMap[it.fqn] = it
+    fun addStrategy(strategy: GameStrategy) {
+        strategyList.add(strategy)
+        with(competition) {
+            competitionMap[gameId]?.add(GameParticipant(username, gameId, strategy.fqn))
+            strategyMap[strategy.fqn] = strategy
         }
-    }
-
-    fun registerGroup(gameId: String, username: String, rules: Rules = Rules()) {
-        groupGameId = GameId(gameId)
-        participantMap.putIfAbsent(GameId(gameId), mutableListOf())
-        strategyGroupList.forEach {
-            participantMap[GameId(gameId)]?.add(
-                GameParticipant(
-                    Username(username),
-                    GameId(gameId),
-                    it.fqn
-                )
-            )
-        }
-        register(Username(username), GameId(gameId), rules)
     }
 
     fun go() {
@@ -53,45 +30,7 @@ class StrategyGroup(vararg strategies: GameStrategy) {
             }
         }.use { client ->
             runBlocking {
-                client.get("http://localhost:8081/$GO?gameId=${groupGameId.id}")
-            }
-        }
-    }
-
-    companion object {
-        val participantMap: MutableMap<GameId, MutableList<GameParticipant>> = mutableMapOf()
-        val strategyMap: MutableMap<StrategyFqn, GameStrategy> = mutableMapOf()
-
-        init {
-            thread {
-                embeddedServer(
-                    CIO,
-                    port = 8082,
-                    host = "0.0.0.0",
-                    module = Application::playerModule
-                )
-                    .start(wait = true)
-            }
-        }
-
-        fun register(username: Username, gameId: GameId, rules: Rules) {
-            HttpClient(io.ktor.client.engine.cio.CIO) {
-                install(io.ktor.client.plugins.contentnegotiation.ContentNegotiation) {
-                    json()
-                }
-            }.use { client ->
-                runBlocking {
-                    client.post("http://localhost:8081/$REGISTER") {
-                        setJsonBody(
-                            GameRequest(
-                                gameId,
-                                username,
-                                "http://localhost:8082",
-                                rules
-                            )
-                        )
-                    }
-                }
+                client.get("http://localhost:$GAME_SERVER_PORT/$GO?gameId=${competition.gameId.id}")
             }
         }
     }

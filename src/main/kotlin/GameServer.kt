@@ -1,3 +1,5 @@
+import com.mattbobambrose.prisoner.common.Constants.GAME_SERVER_PORT
+import com.mattbobambrose.prisoner.common.Constants.GENERATION_COUNT
 import com.mattbobambrose.prisoner.common.EndpointNames.STRATEGYFQNS
 import com.mattbobambrose.prisoner.common.GameId
 import com.mattbobambrose.prisoner.common.HttpObjects.GameRequest
@@ -12,21 +14,22 @@ import io.ktor.client.plugins.HttpRequestRetry
 import io.ktor.client.request.get
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.application.Application
-import io.ktor.server.cio.CIO
 import io.ktor.server.engine.embeddedServer
+import io.ktor.server.netty.Netty
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.runBlocking
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.concurrent.thread
 
-object GameServer {
-    val gameRequests = Channel<GameRequest>()
-    private val pendingGameRequestsMap = ConcurrentHashMap<GameId, MutableList<GameRequest>>()
-    val playChannel = Channel<Pair<GameId, SuspendingCountDownLatch>>()
-    val gameList = mutableListOf<Game>()
+class GameServer {
+    val httpServer = embeddedServer(
+        Netty,
+        port = GAME_SERVER_PORT,
+        host = "0.0.0.0",
+        module = Application::gameServerModule
+    )
 
-    @JvmStatic
-    fun main(args: Array<String>) {
+    init {
         thread {
             runBlocking {
                 for (request in gameRequests) {
@@ -46,8 +49,14 @@ object GameServer {
                 }
             }
         }
-        embeddedServer(CIO, port = 8081, host = "0.0.0.0", module = Application::gameServerModule)
-            .start(wait = true)
+    }
+
+    fun startServer() {
+        httpServer.start(wait = false)
+    }
+
+    fun stopServer() {
+        httpServer.stop(1000, 1000)
     }
 
     suspend fun playGame(gameId: GameId, latch: SuspendingCountDownLatch) {
@@ -74,7 +83,7 @@ object GameServer {
                 }.flatten()
             println("Playing game with $infoList")
             println("infoList size: ${infoList.size}")
-            with(Game(gameId, infoList, 2)) {
+            with(Game(gameId, infoList, GENERATION_COUNT)) {
                 latch.countDown()
                 gameList.add(this)
                 runSimulation(requests.first().rules)
@@ -83,9 +92,21 @@ object GameServer {
         }
     }
 
-    fun getGame(gameId: GameId): Game? = gameList.find { it.gameId == gameId }
+    companion object {
+        val gameRequests = Channel<GameRequest>()
+        val playChannel = Channel<Pair<GameId, SuspendingCountDownLatch>>()
+        private val pendingGameRequestsMap = ConcurrentHashMap<GameId, MutableList<GameRequest>>()
 
-    fun pendingGames(): List<GameId> = pendingGameRequestsMap.keys.toList()
+        // TODO Not being purged
+        val gameList = mutableListOf<Game>()
 
-    fun currentGameIds(): List<GameId> = gameList.map { it.gameId }
+        @JvmStatic
+        fun main(args: Array<String>) {
+            GameServer().startServer()
+        }
+
+        fun findGame(gameId: GameId): Game? = gameList.find { it.gameId == gameId }
+
+        fun pendingGames(): List<GameId> = pendingGameRequestsMap.keys.toList()
+    }
 }

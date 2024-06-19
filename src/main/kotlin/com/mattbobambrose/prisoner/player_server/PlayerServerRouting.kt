@@ -5,8 +5,8 @@ import com.mattbobambrose.prisoner.common.EndpointNames.STRATEGYFQNS
 import com.mattbobambrose.prisoner.common.HttpObjects
 import com.mattbobambrose.prisoner.common.HttpObjects.StrategyResponse
 import com.mattbobambrose.prisoner.common.StrategyFqn
-import com.mattbobambrose.prisoner.player_server.StrategyGroup.Companion.participantMap
-import com.mattbobambrose.prisoner.player_server.StrategyGroup.Companion.strategyMap
+import com.mattbobambrose.prisoner.player_server.PlayerServer.Companion.competitionMap
+import com.mattbobambrose.prisoner.player_server.PlayerServer.Companion.strategyMap
 import io.ktor.server.application.Application
 import io.ktor.server.application.call
 import io.ktor.server.request.receive
@@ -20,7 +20,7 @@ fun Application.playerServerRouting() {
         get("/$STRATEGYFQNS") {
             val gameId = call.request.queryParameters["gameId"] ?: error("Missing gameId")
             val username = call.request.queryParameters["username"] ?: error("Missing username")
-            val response = participantMap
+            val response = competitionMap
                 .filter { it.key.id == gameId }
                 .map { participants ->
                     participants.value

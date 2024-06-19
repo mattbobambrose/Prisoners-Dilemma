@@ -3,6 +3,7 @@ package com.mattbobambrose.prisoner.strategy
 import com.mattbobambrose.prisoner.common.Decision
 import com.mattbobambrose.prisoner.common.Decision.COOPERATE
 import com.mattbobambrose.prisoner.common.Decision.DEFECT
+import com.mattbobambrose.prisoner.player_server.StrategyGroup
 
 class DefEveryThree : GameStrategy() {
     override fun chooseOption(
@@ -15,4 +16,8 @@ class DefEveryThree : GameStrategy() {
             roundNumber % 3 == 2 -> DEFECT
             else -> COOPERATE
         }
+
+    companion object {
+        fun StrategyGroup.defEveryThree() = addStrategy(DefEveryThree())
+    }
 }

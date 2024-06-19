@@ -5,15 +5,19 @@ val coroutinesVersion: String by project
 val iterVersion: String by project
 
 plugins {
-    kotlin("jvm") version "2.0.0"
+    kotlin("jvm") version "1.9.24"
     id("io.ktor.plugin") version "2.3.11"
-    id("org.jetbrains.kotlin.plugin.serialization") version "2.0.0"
+    id("org.jetbrains.kotlin.plugin.serialization") version "1.9.24"
+//    kotlin("plugin.power-assert") version "1.9.24"
+    id("com.google.devtools.ksp") version "1.9.24-1.0.20"
+    id("org.jetbrains.kotlinx.rpc.plugin") version "0.1.0"
 }
 group = "org.example"
 
 version = "1.0-SNAPSHOT"
 
 repositories {
+    maven("https://maven.pkg.jetbrains.space/public/p/krpc/maven")
     mavenCentral()
 }
 
@@ -35,12 +39,22 @@ dependencies {
     implementation("io.ktor:ktor-server-html-builder-jvm")
     implementation("org.jetbrains.kotlinx:kotlinx-html-jvm:0.10.1")
     implementation("io.ktor:ktor-server-websockets-jvm")
-    implementation("io.ktor:ktor-server-cio-jvm")
-    implementation("ch.qos.logback:logback-classic:$logback_version")
     implementation("io.ktor:ktor-server-status-pages:$ktor_version")
     implementation("io.ktor:ktor-server-call-logging:$ktor_version")
     implementation("io.ktor:ktor-client-core:$ktor_version")
     implementation("io.ktor:ktor-client-cio:$ktor_version")
+
+    implementation("org.jetbrains.kotlinx:kotlinx-rpc-runtime-client:1.9.24-0.1.0")
+
+    implementation("org.jetbrains.kotlinx:kotlinx-rpc-runtime-server:1.9.24-0.1.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-rpc-runtime-serialization-json")
+
+    implementation("org.jetbrains.kotlinx:kotlinx-rpc-transport-ktor-client")
+    implementation("org.jetbrains.kotlinx:kotlinx-rpc-transport-ktor-server")
+
+    implementation("io.ktor:ktor-server-netty-jvm:$ktor_version")
+
+    implementation("ch.qos.logback:logback-classic:$logback_version")
     testImplementation("io.ktor:ktor-server-tests-jvm")
     testImplementation("io.ktor:ktor-server-test-host:$ktor_version")
     testImplementation("org.jetbrains.kotlin:kotlin-test:$kotlin_version")

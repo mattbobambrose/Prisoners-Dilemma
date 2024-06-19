@@ -2,6 +2,7 @@ package com.mattbobambrose.prisoner.strategy
 
 import com.mattbobambrose.prisoner.common.Decision
 import com.mattbobambrose.prisoner.common.Decision.DEFECT
+import com.mattbobambrose.prisoner.player_server.StrategyGroup
 
 class AlwaysDefect : GameStrategy() {
     override fun chooseOption(
@@ -11,5 +12,9 @@ class AlwaysDefect : GameStrategy() {
         opponentMoves: List<Decision>
     ): Decision {
         return DEFECT
+    }
+
+    companion object {
+        fun StrategyGroup.alwaysDefect() = addStrategy(AlwaysDefect())
     }
 }

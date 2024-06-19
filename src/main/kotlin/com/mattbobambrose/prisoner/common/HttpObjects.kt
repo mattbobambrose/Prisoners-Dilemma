@@ -8,12 +8,12 @@ class HttpObjects {
 
     @Serializable
     data class Rules(
-        val winPoints: Int = 5,
-        val bothWinPoints: Int = 3,
-        val bothLosePoints: Int = 1,
-        val lossPoints: Int = 0,
-        val rounds: Int = 10,
-        val isRandomSize: Boolean = false
+        var winPoints: Int = 5,
+        var bothWinPoints: Int = 3,
+        var bothLosePoints: Int = 1,
+        var lossPoints: Int = 0,
+        var rounds: Int = 10,
+        var isRandomSize: Boolean = false
     )
 
     @Serializable

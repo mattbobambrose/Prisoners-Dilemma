@@ -10,4 +10,5 @@ object EndpointNames {
     const val MOREDETAILS = "more-details"
     const val STRATEGYHISTORY = "strategy-history"
     const val CSS_SOURCE = "/css/style.css"
+    const val KRPC_DECISION = "krpc-decision"
 }

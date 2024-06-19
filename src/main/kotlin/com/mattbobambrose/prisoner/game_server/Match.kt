@@ -3,55 +3,15 @@ package com.mattbobambrose.prisoner.game_server
 import com.mattbobambrose.prisoner.common.Configuration.transportType
 import com.mattbobambrose.prisoner.common.Decision
 import com.mattbobambrose.prisoner.common.Decision.COOPERATE
-import com.mattbobambrose.prisoner.common.EndpointNames.STRATEGY
 import com.mattbobambrose.prisoner.common.HttpObjects.Rules
-import com.mattbobambrose.prisoner.common.HttpObjects.StrategyArgs
 import com.mattbobambrose.prisoner.common.HttpObjects.StrategyInfo
-import com.mattbobambrose.prisoner.common.HttpObjects.StrategyResponse
 import com.mattbobambrose.prisoner.common.MatchId
 import com.mattbobambrose.prisoner.common.Utils.randomId
-import com.mattbobambrose.prisoner.common.Utils.setJsonBody
 import com.mattbobambrose.prisoner.game_server.TransportType.GRPC
 import com.mattbobambrose.prisoner.game_server.TransportType.KRPC
 import com.mattbobambrose.prisoner.game_server.TransportType.REST
-import io.ktor.client.HttpClient
-import io.ktor.client.call.body
-import io.ktor.client.request.post
 import kotlinx.coroutines.delay
 import kotlin.time.Duration.Companion.milliseconds
-
-enum class TransportType {
-    REST, KRPC, GRPC
-}
-
-interface CallTransport {
-    suspend fun requestDecision(
-        client: HttpClient,
-        info: StrategyInfo,
-        opponentInfo: StrategyInfo,
-        round: Int
-    ): Decision
-}
-
-class RestTransport(val match: Match) : CallTransport {
-    override suspend fun requestDecision(
-        client: HttpClient,
-        info: StrategyInfo,
-        opponentInfo: StrategyInfo,
-        round: Int
-    ): Decision {
-        return client.post("${info.url}/$STRATEGY/${info.fqn.name}") {
-            setJsonBody(
-                StrategyArgs(
-                    round,
-                    opponentInfo,
-                    match.makeHistory(info),
-                    match.makeHistory(opponentInfo)
-                )
-            )
-        }.body<StrategyResponse>().decision
-    }
-}
 
 class Match(
     val parentGeneration: Generation,
@@ -69,17 +29,17 @@ class Match(
     var isRunning = false
     var isFinished = false
 
-    suspend fun runMatch(client: HttpClient) {
+    suspend fun runMatch(client: ClientContext) {
         isRunning = true
         val serverImpl: CallTransport =
             when (transportType) {
-                REST -> RestTransport(this)
+                REST -> RestTransport(client.httpClient, this)
                 GRPC -> throw NotImplementedError("gRPC not supported")
-                KRPC -> throw NotImplementedError("kRPC not supported")
+                KRPC -> KRpcTransport(client.krpcClient, this)
             }
         for (i in 0 until rules.rounds) {
-            val d1 = serverImpl.requestDecision(client, info1, info2, i)
-            val d2 = serverImpl.requestDecision(client, info2, info1, i)
+            val d1 = serverImpl.requestDecision(info1, info2, i)
+            val d2 = serverImpl.requestDecision(info2, info1, i)
 
             updateIncreases(d1, d2)
             updateScore()
