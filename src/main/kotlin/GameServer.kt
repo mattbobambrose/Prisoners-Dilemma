@@ -5,6 +5,7 @@ import com.mattbobambrose.prisoner.common.GameId
 import com.mattbobambrose.prisoner.common.HttpObjects.GameRequest
 import com.mattbobambrose.prisoner.common.HttpObjects.StrategyInfo
 import com.mattbobambrose.prisoner.common.StrategyFqn
+import com.mattbobambrose.prisoner.common.Utils.encode
 import com.mattbobambrose.prisoner.game_server.Game
 import com.mattbobambrose.prisoner.game_server.SuspendingCountDownLatch
 import com.mattbobambrose.prisoner.game_server.gameServerModule
@@ -19,9 +20,11 @@ import io.ktor.server.netty.Netty
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.runBlocking
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.CountDownLatch
 import kotlin.concurrent.thread
 
 class GameServer {
+    val completionCountDownLatchMap = mutableMapOf<GameId, CountDownLatch>()
     val httpServer = embeddedServer(
         Netty,
         port = GAME_SERVER_PORT,
@@ -77,7 +80,7 @@ class GameServer {
                 requests.map { request ->
                     val requestURL = request.url
                     println("Received: $requestURL")
-                    client.get("${requestURL}/$STRATEGYFQNS?gameId=${gameId.id}&username=${request.username.name}")
+                    client.get("${requestURL}/$STRATEGYFQNS?gameId=${gameId.id.encode()}&username=${request.username.name.encode()}")
                         .body<List<StrategyFqn>>()
                         .map { StrategyInfo(requestURL, request.username, it) }
                 }.flatten()
@@ -88,6 +91,7 @@ class GameServer {
                 gameList.add(this)
                 runSimulation(requests.first().rules)
                 reportScores()
+                completionCountDownLatchMap[gameId]?.countDown()
             }
         }
     }

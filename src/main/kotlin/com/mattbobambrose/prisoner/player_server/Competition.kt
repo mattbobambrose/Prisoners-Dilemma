@@ -6,13 +6,13 @@ import com.mattbobambrose.prisoner.common.GameId
 import com.mattbobambrose.prisoner.common.HttpObjects
 import com.mattbobambrose.prisoner.common.Username
 import com.mattbobambrose.prisoner.common.Utils
+import com.mattbobambrose.prisoner.common.Utils.encode
 import io.ktor.client.HttpClient
 import io.ktor.client.request.get
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.runBlocking
 
-class Competition() {
-    val gameId: GameId = GameId(Utils.getRandomString(10))
+class Competition(val gameId: GameId = GameId(Utils.getRandomString(10))) {
     val strategies = mutableListOf<StrategyGroup>()
     var rules: HttpObjects.Rules = HttpObjects.Rules()
 
@@ -49,7 +49,10 @@ class Competition() {
             }
         }.use { client ->
             runBlocking {
-                client.get("http://localhost:$GAME_SERVER_PORT/$GO?gameId=${gameId.id}")
+                println("Hello from go")
+                val url = "http://localhost:$GAME_SERVER_PORT/$GO?gameId=${gameId.id.encode()}"
+                client.get(url)
+                println(url)
             }
         }
     }

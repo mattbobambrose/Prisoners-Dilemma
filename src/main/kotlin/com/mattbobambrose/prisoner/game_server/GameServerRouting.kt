@@ -12,6 +12,7 @@ import com.mattbobambrose.prisoner.common.EndpointNames.SCOREBOARD
 import com.mattbobambrose.prisoner.common.EndpointNames.STRATEGYHISTORY
 import com.mattbobambrose.prisoner.common.GameId
 import com.mattbobambrose.prisoner.common.HttpObjects.GameRequest
+import com.mattbobambrose.prisoner.common.Utils.encode
 import io.ktor.server.application.Application
 import io.ktor.server.application.call
 import io.ktor.server.html.respondHtml
@@ -71,7 +72,7 @@ fun Application.gameServerRouting() {
                                     td {
                                         button(classes = "playButton") {
                                             onClick =
-                                                "window.location.href='/$GO?gameId=${gameId.id}'"
+                                                "window.location.href='/$GO?gameId=${gameId.id.encode()}'"
                                             +"Play Game ${gameId.id}"
                                         }
                                     }
@@ -89,7 +90,7 @@ fun Application.gameServerRouting() {
                 playChannel.send(GameId(gameId) to this)
                 await()
             }
-            call.respondRedirect("/$SCOREBOARD?gameId=$gameId")
+            call.respondRedirect("/$SCOREBOARD?gameId=${gameId.encode()}")
         }
 
         get("/$SCOREBOARD") {

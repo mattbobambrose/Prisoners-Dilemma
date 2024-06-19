@@ -11,6 +11,11 @@ import kotlinx.rpc.serialization.json
 import kotlinx.rpc.transport.ktor.client.installRPC
 import kotlinx.rpc.transport.ktor.client.rpc
 import kotlinx.rpc.transport.ktor.client.rpcConfig
+import java.net.URLEncoder
+import java.time.Instant
+import java.time.ZoneOffset
+import java.time.format.DateTimeFormatter
+import kotlin.text.Charsets.UTF_8
 
 object Utils {
     private val chars = ('0'..'9') + ('a'..'z') + ('A'..'Z')
@@ -45,4 +50,11 @@ object Utils {
             .joinToString("")
 
     private val allowedChars = ('A'..'Z') + ('a'..'z') + ('0'..'9')
+
+    fun getTimestamp() = DateTimeFormatter
+        .ofPattern("yyyy-MM-dd HH:mm:ss")
+        .withZone(ZoneOffset.UTC)
+        .format(Instant.now())
+
+    fun String.encode() = URLEncoder.encode(this, UTF_8.toString()) ?: this
 }
