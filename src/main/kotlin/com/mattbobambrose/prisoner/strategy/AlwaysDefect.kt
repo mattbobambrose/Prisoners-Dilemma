@@ -15,6 +15,10 @@ class AlwaysDefect : GameStrategy() {
     }
 
     companion object {
-        fun StrategyGroup.alwaysDefect() = addStrategy(AlwaysDefect())
+        fun StrategyGroup.alwaysDefect(strategyCount: Int = 1) {
+            repeat(strategyCount) {
+                addStrategy(AlwaysDefect())
+            }
+        }
     }
 }

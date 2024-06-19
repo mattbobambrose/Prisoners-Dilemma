@@ -1,12 +1,9 @@
 import com.mattbobambrose.prisoner.player_server.Competition
-import com.mattbobambrose.prisoner.player_server.PlayerServer
 import com.mattbobambrose.prisoner.strategy.AlwaysCoop.Companion.alwaysCoop
 import com.mattbobambrose.prisoner.strategy.AlwaysDefect.Companion.alwaysDefect
-import com.mattbobambrose.prisoner.strategy.Random.Companion.random
+import com.mattbobambrose.prisoner.strategy.TitForTat.Companion.titForTat
 
-class GameServerContext {
-    val server = PlayerServer()
-}
+class GameServerContext {}
 
 fun gameServer(block: GameServerContext.() -> Unit) {
     val server = GameServer()
@@ -27,21 +24,17 @@ object Player {
         gameServer {
             competition {
                 rules {
-                    rounds = 10
+                    rounds = 200
                 }
-                player("Matthew") {
-                    alwaysCoop()
-                    alwaysCoop()
+                player("Matthew", 8083) {
+                    alwaysCoop(2)
                 }
-                player("Paul") {
-                    alwaysDefect()
+                player("Paul", 8084) {
                     alwaysDefect()
                 }
-                player("Anh") {
-                    random()
-                    random()
+                player("Anh", 8085) {
+                    titForTat()
                 }
-
             }.start()
         }
 

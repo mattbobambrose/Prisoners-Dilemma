@@ -15,6 +15,10 @@ class AlwaysCoop : GameStrategy() {
     }
 
     companion object {
-        fun StrategyGroup.alwaysCoop() = addStrategy(AlwaysCoop())
+        fun StrategyGroup.alwaysCoop(strategyCount: Int = 1) {
+            repeat(strategyCount) {
+                addStrategy(AlwaysCoop())
+            }
+        }
     }
 }

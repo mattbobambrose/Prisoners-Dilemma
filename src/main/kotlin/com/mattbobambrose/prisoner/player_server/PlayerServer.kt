@@ -1,7 +1,6 @@
 package com.mattbobambrose.prisoner.player_server
 
 import com.mattbobambrose.prisoner.common.Constants.GAME_SERVER_PORT
-import com.mattbobambrose.prisoner.common.Constants.PLAYER_SERVER_PORT
 import com.mattbobambrose.prisoner.common.EndpointNames.REGISTER
 import com.mattbobambrose.prisoner.common.GameId
 import com.mattbobambrose.prisoner.common.HttpObjects.GameParticipant
@@ -18,19 +17,21 @@ import io.ktor.server.application.Application
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.netty.Netty
 import kotlinx.coroutines.runBlocking
-import kotlin.concurrent.thread
 
-class PlayerServer() {
-    init {
-        thread {
-            embeddedServer(
-                Netty,
-                port = PLAYER_SERVER_PORT,
-                host = "0.0.0.0",
-                module = Application::playerModule
-            )
-                .start(wait = true)
-        }
+class PlayerServer(portNumber: Int) {
+    private val server = embeddedServer(
+        Netty,
+        port = portNumber,
+        host = "0.0.0.0",
+        module = Application::playerModule
+    )
+
+    fun startServer() {
+        server.start(wait = false)
+    }
+
+    fun stopServer() {
+        server.stop(1000, 1000)
     }
 
     companion object {

@@ -18,6 +18,10 @@ class EveryOther : GameStrategy() {
         }
 
     companion object {
-        fun StrategyGroup.everyOther() = addStrategy(EveryOther())
+        fun StrategyGroup.everyOther(strategyCount: Int = 1) {
+            repeat(strategyCount) {
+                addStrategy(EveryOther())
+            }
+        }
     }
 }

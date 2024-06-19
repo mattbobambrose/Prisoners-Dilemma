@@ -18,6 +18,10 @@ class DefEveryThree : GameStrategy() {
         }
 
     companion object {
-        fun StrategyGroup.defEveryThree() = addStrategy(DefEveryThree())
+        fun StrategyGroup.defEveryThree(strategyCount: Int = 1) {
+            repeat(strategyCount) {
+                addStrategy(DefEveryThree())
+            }
+        }
     }
 }
