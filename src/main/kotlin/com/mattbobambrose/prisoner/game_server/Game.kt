@@ -1,8 +1,8 @@
 package com.mattbobambrose.prisoner.game_server
 
+import com.mattbobambrose.prisoner.common.CompetitionId
 import com.mattbobambrose.prisoner.common.Constants.GAME_SERVER_PORT
 import com.mattbobambrose.prisoner.common.EndpointNames.KRPC_DECISION
-import com.mattbobambrose.prisoner.common.GameId
 import com.mattbobambrose.prisoner.common.HttpObjects.Rules
 import com.mattbobambrose.prisoner.common.HttpObjects.StrategyInfo
 import com.mattbobambrose.prisoner.common.Utils.createRpcClient
@@ -49,7 +49,7 @@ class ClientContext : Closeable {
 }
 
 class Game(
-    val gameId: GameId,
+    val competitionId: CompetitionId,
     private val infoList: List<StrategyInfo>,
     private val generationCount: Int
 ) {

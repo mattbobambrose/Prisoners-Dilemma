@@ -14,7 +14,7 @@ value class StrategyFqn(val name: String) {
 
 @JvmInline
 @Serializable
-value class GameId(val id: String) {
+value class CompetitionId(val id: String) {
     init {
         require(id.isNotEmpty()) { "ID must not be empty" }
     }
@@ -22,7 +22,7 @@ value class GameId(val id: String) {
     override fun toString(): String = id
 
     companion object {
-        val unknownGameId = GameId("Unknown")
+        val unknownCompetitionId = CompetitionId("Unknown")
     }
 }
 

@@ -1,7 +1,7 @@
+import com.mattbobambrose.prisoner.common.CompetitionId
 import com.mattbobambrose.prisoner.common.Constants.GAME_SERVER_PORT
 import com.mattbobambrose.prisoner.common.Constants.GENERATION_COUNT
 import com.mattbobambrose.prisoner.common.EndpointNames.STRATEGYFQNS
-import com.mattbobambrose.prisoner.common.GameId
 import com.mattbobambrose.prisoner.common.HttpObjects.GameRequest
 import com.mattbobambrose.prisoner.common.HttpObjects.StrategyInfo
 import com.mattbobambrose.prisoner.common.StrategyFqn
@@ -9,6 +9,8 @@ import com.mattbobambrose.prisoner.common.Utils.encode
 import com.mattbobambrose.prisoner.game_server.Game
 import com.mattbobambrose.prisoner.game_server.SuspendingCountDownLatch
 import com.mattbobambrose.prisoner.game_server.gameServerModule
+import com.mattbobambrose.prisoner.player_server.Competition
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.plugins.HttpRequestRetry
@@ -20,12 +22,11 @@ import io.ktor.server.netty.Netty
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.runBlocking
 import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.CountDownLatch
 import kotlin.concurrent.thread
 
 class GameServer {
-    val completionCountDownLatchMap = mutableMapOf<GameId, CountDownLatch>()
-    val httpServer = embeddedServer(
+    val competitionMap = ConcurrentHashMap<CompetitionId, Competition>()
+    private val httpServer = embeddedServer(
         Netty,
         port = GAME_SERVER_PORT,
         host = "0.0.0.0",
@@ -37,8 +38,8 @@ class GameServer {
             runBlocking {
                 for (request in gameRequests) {
                     with(pendingGameRequestsMap) {
-                        putIfAbsent(request.gameId, mutableListOf())
-                        get(request.gameId)?.add(request)
+                        putIfAbsent(request.competitionId, mutableListOf())
+                        get(request.competitionId)?.add(request)
                             ?: error("Error adding participant")
                     }
                 }
@@ -46,9 +47,9 @@ class GameServer {
         }
         thread {
             runBlocking {
-                for ((gameId, latch) in playChannel) {
+                for ((gameId, gameLatch) in playChannel) {
                     println("Playing game ${gameId.id}")
-                    playGame(gameId, latch)
+                    playGame(gameId, gameLatch)
                 }
             }
         }
@@ -62,7 +63,7 @@ class GameServer {
         httpServer.stop(1000, 1000)
     }
 
-    suspend fun playGame(gameId: GameId, latch: SuspendingCountDownLatch) {
+    suspend fun playGame(competitionId: CompetitionId, gameLatch: SuspendingCountDownLatch) {
         HttpClient(io.ktor.client.engine.cio.CIO) {
             install(io.ktor.client.plugins.contentnegotiation.ContentNegotiation) {
                 println("Configuring ContentNegotiation...")
@@ -73,33 +74,32 @@ class GameServer {
                 exponentialDelay()
             }
         }.use { client ->
-            val requests = pendingGameRequestsMap.remove(gameId)
-                ?: error("No participants for game ${gameId.id}")
-            println("Participants size: ${requests.size}")
+            val requests = pendingGameRequestsMap.remove(competitionId)
+                ?: error("No participants for game ${competitionId.id}")
             val infoList =
                 requests.map { request ->
                     val requestURL = request.url
-                    println("Received: $requestURL")
-                    client.get("${requestURL}/$STRATEGYFQNS?gameId=${gameId.id.encode()}&username=${request.username.name.encode()}")
+                    client.get("${requestURL}/$STRATEGYFQNS?gameId=${competitionId.id.encode()}&username=${request.username.name.encode()}")
                         .body<List<StrategyFqn>>()
                         .map { StrategyInfo(requestURL, request.username, it) }
                 }.flatten()
-            println("Playing game with $infoList")
-            println("infoList size: ${infoList.size}")
-            with(Game(gameId, infoList, GENERATION_COUNT)) {
-                latch.countDown()
+
+            with(Game(competitionId, infoList, GENERATION_COUNT)) {
+                gameLatch.countDown()
                 gameList.add(this)
                 runSimulation(requests.first().rules)
                 reportScores()
-                completionCountDownLatchMap[gameId]?.countDown()
+                competitionMap[competitionId]?.onCompletion()
             }
         }
     }
 
     companion object {
+        private val logger = KotlinLogging.logger {}
         val gameRequests = Channel<GameRequest>()
-        val playChannel = Channel<Pair<GameId, SuspendingCountDownLatch>>()
-        private val pendingGameRequestsMap = ConcurrentHashMap<GameId, MutableList<GameRequest>>()
+        val playChannel = Channel<Pair<CompetitionId, SuspendingCountDownLatch>>()
+        private val pendingGameRequestsMap =
+            ConcurrentHashMap<CompetitionId, MutableList<GameRequest>>()
 
         // TODO Not being purged
         val gameList = mutableListOf<Game>()
@@ -109,8 +109,9 @@ class GameServer {
             GameServer().startServer()
         }
 
-        fun findGame(gameId: GameId): Game? = gameList.find { it.gameId == gameId }
+        fun findGame(competitionId: CompetitionId): Game? =
+            gameList.find { it.competitionId == competitionId }
 
-        fun pendingGames(): List<GameId> = pendingGameRequestsMap.keys.toList()
+        fun pendingGames(): List<CompetitionId> = pendingGameRequestsMap.keys.toList()
     }
 }

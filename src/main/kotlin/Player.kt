@@ -1,4 +1,4 @@
-import com.mattbobambrose.prisoner.common.GameId
+import com.mattbobambrose.prisoner.common.CompetitionId
 import com.mattbobambrose.prisoner.common.Utils.getTimestamp
 import com.mattbobambrose.prisoner.player_server.Competition
 import com.mattbobambrose.prisoner.strategy.TitForTat.Companion.titForTat
@@ -19,34 +19,35 @@ fun GameServerContext.competition(
     name: String,
     block: Competition.() -> Unit
 ) {
-    val gameid = GameId("$name-${getTimestamp()}")
+    val competitionId = CompetitionId("$name-${getTimestamp()}")
     val completionLatch = CountDownLatch(1)
-    server.completionCountDownLatchMap[gameid] = completionLatch
-    Competition(gameid).apply(block).start()
+    val competition = Competition(this.server, competitionId, completionLatch)
+    server.competitionMap[competitionId] = competition
+    competition.apply(block).start()
     completionLatch.await()
-    server.completionCountDownLatchMap.remove(gameid)
-        ?: error("Error removing completion latch for $gameid")
 }
 
 object Player {
     @JvmStatic
     fun main(args: Array<String>) {
         gameServer {
-            competition("Competition 1") {
-                rules {
-                    rounds = 50
+            repeat(10) {
+                competition("Competition $it") {
+                    rules {
+                        rounds = 50
+                    }
+                    player("Matthew") {
+                        titForTat()
+                    }
+                    player("Paul") {
+                        titForTat()
+                    }
+                    player("Anh") {
+                        titForTat()
+                    }
                 }
-                player("Matthew", 8083) {
-                    titForTat()
-                }
-                player("Paul", 8084) {
-                    titForTat()
-                }
-                player("Anh", 8085) {
-                    titForTat()
-                }
+                println("Hello world!")
             }
-            println("Hello world!")
         }
 
 //        StrategyGroup(
