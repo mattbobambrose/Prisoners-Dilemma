@@ -1,11 +1,13 @@
 package com.mattbobambrose.prisoner.common
 
 import io.ktor.client.HttpClient
+import io.ktor.client.plugins.HttpRequestRetry
 import io.ktor.client.request.HttpRequestBuilder
 import io.ktor.client.request.setBody
 import io.ktor.client.request.url
 import io.ktor.http.ContentType.Application.Json
 import io.ktor.http.contentType
+import io.ktor.serialization.kotlinx.json.json
 import kotlinx.rpc.RPCClient
 import kotlinx.rpc.serialization.json
 import kotlinx.rpc.transport.ktor.client.installRPC
@@ -55,6 +57,18 @@ object Utils {
         .ofPattern("yyyy-MM-dd HH:mm:ss")
         .withZone(ZoneOffset.UTC)
         .format(Instant.now())
+
+    fun createHttpClient() =
+        HttpClient(io.ktor.client.engine.cio.CIO) {
+            install(io.ktor.client.plugins.contentnegotiation.ContentNegotiation) {
+//                println("Configuring ContentNegotiation...")
+                json()
+            }
+            install(HttpRequestRetry) {
+                retryOnServerErrors(maxRetries = 5)
+                exponentialDelay()
+            }
+        }
 
     fun String.encode() = URLEncoder.encode(this, UTF_8.toString()) ?: this
 }

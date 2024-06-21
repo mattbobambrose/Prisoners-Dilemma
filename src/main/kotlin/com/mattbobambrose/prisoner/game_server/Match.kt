@@ -10,6 +10,7 @@ import com.mattbobambrose.prisoner.common.Utils.randomId
 import com.mattbobambrose.prisoner.game_server.TransportType.GRPC
 import com.mattbobambrose.prisoner.game_server.TransportType.KRPC
 import com.mattbobambrose.prisoner.game_server.TransportType.REST
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.delay
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -50,7 +51,7 @@ class Match(
             }
         }
         isFinished = true
-        println("Match ${matchId.id} finished")
+        logger.info { "Match ${matchId.id} finished" }
     }
 
     private fun updateScore() {
@@ -87,9 +88,6 @@ class Match(
 
     internal fun makeHistory(fqn: StrategyInfo) =
         moves.map { if (fqn == info1) it.p1Choice else it.p2Choice }
-
-    override fun toString() =
-        "Match(strategy1=$info1, strategy2=$info2, score1=$score1, score2=$score2)"
 
     fun getOpponentFqn(fqn: String) =
         when (fqn) {
@@ -149,4 +147,11 @@ class Match(
         } else {
             "Not Started"
         }
+
+    override fun toString() =
+        "Match(strategy1=${info1.username} with ${info1.fqn}, strategy2=${info2.username} with ${info2.fqn}, score1=$score1, score2=$score2)"
+
+    companion object {
+        val logger = KotlinLogging.logger {}
+    }
 }

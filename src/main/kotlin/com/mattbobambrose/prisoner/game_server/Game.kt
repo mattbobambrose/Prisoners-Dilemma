@@ -6,6 +6,7 @@ import com.mattbobambrose.prisoner.common.EndpointNames.KRPC_DECISION
 import com.mattbobambrose.prisoner.common.HttpObjects.Rules
 import com.mattbobambrose.prisoner.common.HttpObjects.StrategyInfo
 import com.mattbobambrose.prisoner.common.Utils.createRpcClient
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.cio.CIO
 import io.ktor.serialization.kotlinx.json.json
@@ -57,15 +58,12 @@ class Game(
     var isFinished = false
     var currentInfo = infoList
 
-    fun runSimulation(rules: Rules) {
-        runBlocking {
-            ClientContext().use { client ->
-                for (i in 0..<generationCount) {
-                    Generation(this@Game, currentInfo, rules).also { generation ->
-                        generationList.add(generation)
-                        generation.playMatches(client)
-//                        currentInfo = generation.createNewInfoList()
-                    }
+    fun runGame(rules: Rules) {
+        ClientContext().use { client ->
+            for (i in 0..<generationCount) {
+                Generation(this@Game, currentInfo, rules).also { generation ->
+                    generationList.add(generation)
+                    generation.playMatches(client)
                 }
             }
         }
@@ -79,9 +77,8 @@ class Game(
 
     fun reportScores() {
         generationList.forEachIndexed { index, generation ->
-            println("Generation ${index + 1}")
+            logger.info { "Generation ${index + 1}" }
             generation.scoreboard.reportScores()
-            println()
         }
     }
 
@@ -89,5 +86,9 @@ class Game(
         return generationList
             .flatMap { it.matchList }
             .find { it.matchId.id == id }
+    }
+
+    companion object {
+        val logger = KotlinLogging.logger {}
     }
 }

@@ -2,23 +2,24 @@ package com.mattbobambrose.prisoner.player_server
 
 import GameServer
 import com.mattbobambrose.prisoner.common.CompetitionId
+import com.mattbobambrose.prisoner.common.Constants.COMPETITION_ID
 import com.mattbobambrose.prisoner.common.Constants.GAME_SERVER_PORT
 import com.mattbobambrose.prisoner.common.EndpointNames.GO
 import com.mattbobambrose.prisoner.common.HttpObjects
 import com.mattbobambrose.prisoner.common.Port
 import com.mattbobambrose.prisoner.common.Username
 import com.mattbobambrose.prisoner.common.Utils
+import com.mattbobambrose.prisoner.common.Utils.createHttpClient
 import com.mattbobambrose.prisoner.common.Utils.encode
-import io.ktor.client.HttpClient
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.request.get
-import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.runBlocking
 import java.util.concurrent.CountDownLatch
 
 class Competition(
     val gameServer: GameServer,
     val competitionId: CompetitionId = CompetitionId(Utils.getRandomString(10)),
-    private val completionLatch: CountDownLatch
+    val completionLatch: CountDownLatch
 ) {
     val strategies = mutableListOf<StrategyGroup>()
     var rules: HttpObjects.Rules = HttpObjects.Rules()
@@ -45,21 +46,15 @@ class Competition(
             val url = "http://localhost:${it.portNumber}"
             PlayerServer.register(it.username, competitionId, url, rules)
         }
-        go()
+        triggerGameStart()
     }
 
-    private fun go() {
-        HttpClient(io.ktor.client.engine.cio.CIO) {
-            install(io.ktor.client.plugins.contentnegotiation.ContentNegotiation) {
-                json()
-            }
-        }.use { client ->
+    private fun triggerGameStart() {
+        // This will not wait for game completion
+        createHttpClient().use { client ->
             runBlocking {
-                println("Hello from go")
-                val url =
-                    "http://localhost:$GAME_SERVER_PORT/$GO?gameId=${competitionId.id.encode()}"
-                client.get(url)
-                println(url)
+                client.get("http://localhost:$GAME_SERVER_PORT/$GO?$COMPETITION_ID=${competitionId.id.encode()}")
+                logger.info { "Competition ${competitionId.id} started" }
             }
         }
     }
@@ -67,8 +62,11 @@ class Competition(
     fun onCompletion() {
         playerServers.forEach { it.stopServer() }
         strategies.forEach { it.port.setAvailable() }
-        gameServer.competitionMap.remove(competitionId)
-            ?: error("Error removing competition: $competitionId")
         completionLatch.countDown()
+        logger.info { "Competition ${competitionId.id} completed" }
+    }
+
+    companion object {
+        private val logger = KotlinLogging.logger {}
     }
 }

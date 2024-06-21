@@ -9,26 +9,28 @@ import kotlinx.coroutines.selects.select
 object ParallelForEach {
     fun <T> Iterable<T>.forEach(coroutineCount: Int, action: (T) -> Unit) {
         require(coroutineCount > 0) { "Coroutine count must be greater than 0" }
+        val channels = List(coroutineCount) { Channel<T>() }
         runBlocking {
-            val channels = List(coroutineCount) { Channel<T>() }
             launch {
                 this@forEach.forEach { writeChannels(channels, it) }
                 channels.forEach { it.close() }
             }
             readChannels(channels, action)
         }
+        channels.forEach { it.close() }
     }
 
     fun <T> Sequence<T>.forEach(coroutineCount: Int, action: suspend (T) -> Unit) {
         require(coroutineCount > 0) { "Coroutine count must be greater than 0" }
+        val channels = List(coroutineCount) { Channel<T>() }
         runBlocking {
-            val channels = List(coroutineCount) { Channel<T>() }
             launch {
                 this@forEach.forEach { writeChannels(channels, it) }
                 channels.forEach { it.close() }
             }
             readChannels(channels, action)
         }
+        channels.forEach { it.close() }
     }
 
     private suspend fun <T> writeChannels(

@@ -1,9 +1,11 @@
 package com.mattbobambrose.prisoner.game_server
 
 import GameServer
+import GameServer.Companion.logger
+import GameServer.Companion.pendingCompetitionChannel
 import GameServer.Companion.pendingGames
-import GameServer.Companion.playChannel
 import com.mattbobambrose.prisoner.common.CompetitionId
+import com.mattbobambrose.prisoner.common.Constants.COMPETITION_ID
 import com.mattbobambrose.prisoner.common.EndpointNames.CSS_SOURCE
 import com.mattbobambrose.prisoner.common.EndpointNames.GO
 import com.mattbobambrose.prisoner.common.EndpointNames.MOREDETAILS
@@ -67,13 +69,13 @@ fun Application.gameServerRouting() {
                         h1 { +"Prisoner's Dilemma" }
                         p { +"Click the button to start the game" }
                         table(classes = "playButtons") {
-                            pendingGames().forEach { gameId ->
+                            pendingGames().forEach { competitionId ->
                                 tr {
                                     td {
                                         button(classes = "playButton") {
                                             onClick =
-                                                "window.location.href='/$GO?gameId=${gameId.id.encode()}'"
-                                            +"Play Game ${gameId.id}"
+                                                "window.location.href='/$GO?$COMPETITION_ID=${competitionId.id.encode()}'"
+                                            +"Play Game ${competitionId.id}"
                                         }
                                     }
                                 }
@@ -85,18 +87,20 @@ fun Application.gameServerRouting() {
         }
 
         get("/$GO") {
-            val gameId = call.request.queryParameters["gameId"] ?: error("Missing gameId")
-            with(SuspendingCountDownLatch()) {
-                playChannel.send(CompetitionId(gameId) to this)
-                await()
-            }
-            call.respondRedirect("/$SCOREBOARD?gameId=${gameId.encode()}")
+            val competitionId =
+                call.request.queryParameters[COMPETITION_ID] ?: error("Missing $COMPETITION_ID")
+            val gameLatch = SuspendingCountDownLatch()
+            pendingCompetitionChannel.send(CompetitionId(competitionId) to gameLatch)
+            logger.info { "Competition $competitionId requested to start" }
+            gameLatch.await()
+            call.respondRedirect("/$SCOREBOARD?$COMPETITION_ID=${competitionId.encode()}")
         }
 
         get("/$SCOREBOARD") {
-            val gameId = call.request.queryParameters["gameId"] ?: error("Missing gameId")
+            val competitionId =
+                call.request.queryParameters[COMPETITION_ID] ?: error("Missing $COMPETITION_ID")
             val game =
-                GameServer.findGame(CompetitionId(gameId)) ?: error("Game not found")
+                GameServer.findGame(CompetitionId(competitionId)) ?: error("Game not found")
             call.respondHtml {
                 head {
                     link { rel = "stylesheet"; href = CSS_SOURCE }
@@ -106,7 +110,7 @@ fun Application.gameServerRouting() {
                 }
                 body {
                     div {
-                        h1 { +"Scoreboard for game $gameId" }
+                        h1 { +"Scoreboard for game $competitionId" }
                         h2 {
                             +if (game.isFinished)
                                 "Game ${game.competitionId.id} is finished"
@@ -136,7 +140,7 @@ fun Application.gameServerRouting() {
                                                 td {
                                                     a {
                                                         href =
-                                                            "/$MOREDETAILS?gameId=$gameId&genIndex=$genIndex&fqn=${scorecard.strategyInfo.fqn}"
+                                                            "/$MOREDETAILS?$COMPETITION_ID=$competitionId&genIndex=$genIndex&fqn=${scorecard.strategyInfo.fqn}"
                                                         +"More details"
                                                     }
                                                 }
@@ -151,11 +155,12 @@ fun Application.gameServerRouting() {
         }
 
         get("/$MOREDETAILS") {
-            val gameId = call.request.queryParameters["gameId"] ?: error("Missing gameId")
+            val competitionId =
+                call.request.queryParameters[COMPETITION_ID] ?: error("Missing $COMPETITION_ID")
             val genIndex = call.request.queryParameters["genIndex"] ?: error("Missing genIndex")
             val fqn = call.request.queryParameters["fqn"] ?: error("Missing info")
             val game =
-                GameServer.findGame(CompetitionId(gameId)) ?: error("Game not found")
+                GameServer.findGame(CompetitionId(competitionId)) ?: error("Game not found")
             val matchList: List<Match> =
                 buildList {
                     game.generationList.forEach { generation ->
@@ -181,7 +186,7 @@ fun Application.gameServerRouting() {
                             h2 { +"Some matches are still in progress for strategy $fqn" }
                         }
                         a {
-                            href = "/$SCOREBOARD?gameId=$gameId"
+                            href = "/$SCOREBOARD?$COMPETITION_ID=$competitionId"
                             +"Back to scoreboard"
                         }
                         table(classes = "scores") {
@@ -208,7 +213,7 @@ fun Application.gameServerRouting() {
                                         td {
                                             a {
                                                 href =
-                                                    "/$STRATEGYHISTORY?gameId=$gameId&fqn=$fqn&matchId=${it.matchId}"
+                                                    "/$STRATEGYHISTORY?$COMPETITION_ID=$competitionId&fqn=$fqn&matchId=${it.matchId}"
                                                 +"Decision history"
                                             }
                                         }
@@ -222,8 +227,9 @@ fun Application.gameServerRouting() {
         }
 
         get("/$STRATEGYHISTORY") {
-            val gameId = call.request.queryParameters["gameId"] ?: error("Missing gameId")
-            val game = GameServer.findGame(CompetitionId(gameId)) ?: error("Game not found")
+            val competitionId =
+                call.request.queryParameters[COMPETITION_ID] ?: error("Missing $COMPETITION_ID")
+            val game = GameServer.findGame(CompetitionId(competitionId)) ?: error("Game not found")
             val fqn = call.request.queryParameters["fqn"] ?: error("Missing fqn")
             val matchId = call.request.queryParameters["matchId"] ?: error("Missing matchId")
             val match = game.getMatch(matchId) ?: error("Match not found")
@@ -244,11 +250,11 @@ fun Application.gameServerRouting() {
                             h2 { +"Match ${match.matchId.id} against $opponentFqn is in progress" }
                         }
                         a {
-                            href = "/$MOREDETAILS?gameId=$gameId&fqn=$fqn"
+                            href = "/$MOREDETAILS?$COMPETITION_ID=$competitionId&fqn=$fqn"
                             +"Back to strategy details"
                         }
                         a {
-                            href = "/$SCOREBOARD?gameId=$gameId"
+                            href = "/$SCOREBOARD?$COMPETITION_ID=$competitionId"
                             +"Back to scoreboard"
                         }
                         table(classes = "scores") {
@@ -291,8 +297,8 @@ fun Application.gameServerRouting() {
 
         post("/$REGISTER") {
             val participant = call.receive<GameRequest>()
-            println("Registered: $participant")
-            GameServer.gameRequests.send(participant)
+            logger.info { "Registered: $participant" }
+            GameServer.gameRequestChannel.send(participant)
             call.respondText("Registered")
         }
     }

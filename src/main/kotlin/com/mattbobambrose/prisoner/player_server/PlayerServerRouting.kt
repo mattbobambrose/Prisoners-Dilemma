@@ -1,5 +1,7 @@
 package com.mattbobambrose.prisoner.player_server
 
+import GameServer
+import com.mattbobambrose.prisoner.common.Constants.COMPETITION_ID
 import com.mattbobambrose.prisoner.common.EndpointNames.STRATEGY
 import com.mattbobambrose.prisoner.common.EndpointNames.STRATEGYFQNS
 import com.mattbobambrose.prisoner.common.HttpObjects
@@ -18,17 +20,18 @@ import io.ktor.server.routing.routing
 fun Application.playerServerRouting() {
     routing {
         get("/$STRATEGYFQNS") {
-            val gameId = call.request.queryParameters["gameId"] ?: error("Missing gameId")
+            val competitionId =
+                call.request.queryParameters[COMPETITION_ID] ?: error("Missing $COMPETITION_ID")
             val username = call.request.queryParameters["username"] ?: error("Missing username")
             val response = participantMap
-                .filter { it.key.id == gameId }
+                .filter { it.key.id == competitionId }
                 .map { participants ->
                     participants.value
                         .filter { it.username.name == username }
                         .map { it.fqn }
                 }
                 .flatten()
-            println("Response: $response")
+            GameServer.logger.info { "Response: $response" }
             call.respond(response)
         }
 

@@ -19,20 +19,21 @@ import io.ktor.server.engine.embeddedServer
 import io.ktor.server.netty.Netty
 import kotlinx.coroutines.runBlocking
 
-class PlayerServer(portNumber: Int) {
-    private val server = embeddedServer(
+class PlayerServer(val portNumber: Int) {
+    private val playerHttpServer = embeddedServer(
         Netty,
         port = portNumber,
         host = "0.0.0.0",
         module = Application::playerModule
-    ).also { logger.info { "Player server started on port $portNumber" } }
+    ).also { logger.info { "Player server created on port $portNumber" } }
 
     fun startServer() {
-        server.start(wait = false)
+        logger.info { "Starting player server on port $portNumber" }
+        playerHttpServer.start(wait = false)
     }
 
     fun stopServer() {
-        server.stop(1000, 1000)
+        playerHttpServer.stop(1000, 1000)
     }
 
     companion object {

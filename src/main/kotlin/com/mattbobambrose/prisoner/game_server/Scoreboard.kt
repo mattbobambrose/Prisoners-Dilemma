@@ -1,6 +1,7 @@
 package com.mattbobambrose.prisoner.game_server
 
 import com.mattbobambrose.prisoner.common.HttpObjects.StrategyInfo
+import io.github.oshai.kotlinlogging.KotlinLogging
 
 class Scoreboard(fqnList: List<StrategyInfo>) {
     private val scoresList: List<Scorecard> = buildList { fqnList.forEach { add(Scorecard(it)) } }
@@ -9,7 +10,7 @@ class Scoreboard(fqnList: List<StrategyInfo>) {
         scoresList
             .sortedByDescending { it.totalPoints }
             .forEach { scorecard ->
-                println("${scorecard.strategyInfo.fqn.name}: ${scorecard.totalPoints}")
+                logger.info { "${scorecard.strategyInfo.fqn.name}: ${scorecard.totalPoints}" }
             }
     }
 
@@ -34,5 +35,9 @@ class Scoreboard(fqnList: List<StrategyInfo>) {
                 it.updateScorecard(score2, score1, increase2, info1)
             }
         }
+    }
+
+    companion object {
+        val logger = KotlinLogging.logger {}
     }
 }

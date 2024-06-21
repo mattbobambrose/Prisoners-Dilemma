@@ -42,7 +42,7 @@ class OneSidedTests {
 //            assertEquals("Hello World1!", bodyAsText())
 //        }
 //        client.post("/$REGISTER") {
-//            setJsonBody(GameParticipant(GameId("abc"), "http://localhost:8082"))
+//            setJsonBody(GameParticipant(CompetitionId("abc"), "http://localhost:8082"))
 //        }.apply {
 //            assertEquals(HttpStatusCode.OK, status)
 //            assertEquals("Registered", bodyAsText())

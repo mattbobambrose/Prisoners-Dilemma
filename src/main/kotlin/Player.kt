@@ -2,6 +2,7 @@ import com.mattbobambrose.prisoner.common.CompetitionId
 import com.mattbobambrose.prisoner.common.Utils.getTimestamp
 import com.mattbobambrose.prisoner.player_server.Competition
 import com.mattbobambrose.prisoner.strategy.TitForTat.Companion.titForTat
+import io.github.oshai.kotlinlogging.KotlinLogging
 import java.util.concurrent.CountDownLatch
 
 class GameServerContext(val server: GameServer) {}
@@ -11,30 +12,38 @@ fun gameServer(block: GameServerContext.() -> Unit) {
     val gameServerContext = GameServerContext(server)
     server.startServer()
     gameServerContext.apply(block)
-    Thread.sleep(100000)
-//    server.stopServer()
+    server.competitionMap.forEach { (_, competition) ->
+        competition.completionLatch.await()
+    }
+    server.competitionMap.keys.toList().forEach { competitionId ->
+        server.competitionMap.remove(competitionId)
+            ?: error("Error removing competition: $competitionId")
+    }
+    server.stopServer()
 }
 
 fun GameServerContext.competition(
     name: String,
     block: Competition.() -> Unit
 ) {
+    Player.logger.info { "competition() called *****************" }
     val competitionId = CompetitionId("$name-${getTimestamp()}")
     val completionLatch = CountDownLatch(1)
     val competition = Competition(this.server, competitionId, completionLatch)
     server.competitionMap[competitionId] = competition
     competition.apply(block).start()
-    completionLatch.await()
 }
 
 object Player {
+    val logger = KotlinLogging.logger {}
+
     @JvmStatic
     fun main(args: Array<String>) {
         gameServer {
-            repeat(10) {
+            repeat(5) {
                 competition("Competition $it") {
                     rules {
-                        rounds = 50
+                        rounds = 25
                     }
                     player("Matthew") {
                         titForTat()
@@ -46,7 +55,6 @@ object Player {
                         titForTat()
                     }
                 }
-                println("Hello world!")
             }
         }
 
