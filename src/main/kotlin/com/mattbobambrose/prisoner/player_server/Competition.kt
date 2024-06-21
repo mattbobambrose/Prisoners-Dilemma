@@ -5,12 +5,11 @@ import com.mattbobambrose.prisoner.common.CompetitionId
 import com.mattbobambrose.prisoner.common.Constants.COMPETITION_ID
 import com.mattbobambrose.prisoner.common.Constants.GAME_SERVER_PORT
 import com.mattbobambrose.prisoner.common.EndpointNames.GO
-import com.mattbobambrose.prisoner.common.HttpObjects
-import com.mattbobambrose.prisoner.common.Port
-import com.mattbobambrose.prisoner.common.Username
+import com.mattbobambrose.prisoner.common.HttpObjects.Rules
 import com.mattbobambrose.prisoner.common.Utils
 import com.mattbobambrose.prisoner.common.Utils.createHttpClient
 import com.mattbobambrose.prisoner.common.Utils.encode
+import com.mattbobambrose.prisoner.player_server.PlayerDSL.CompetitionContext
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.request.get
 import kotlinx.coroutines.runBlocking
@@ -22,20 +21,12 @@ class Competition(
     val completionLatch: CountDownLatch
 ) {
     val strategies = mutableListOf<StrategyGroup>()
-    var rules: HttpObjects.Rules = HttpObjects.Rules()
+    var rules: Rules = Rules()
     val playerServers = mutableListOf<PlayerServer>()
+    val competitionContext = CompetitionContext(this)
 
     init {
         PlayerServer.participantMap.putIfAbsent(competitionId, mutableListOf())
-    }
-
-    fun rules(block: HttpObjects.Rules.() -> Unit) {
-        rules = HttpObjects.Rules().apply(block)
-    }
-
-    fun player(username: String, block: StrategyGroup.() -> Unit) {
-        val port: Port = Port.nextAvailablePort()
-        strategies += StrategyGroup(this, Username(username), port).apply(block)
     }
 
     fun start() {
@@ -63,6 +54,7 @@ class Competition(
         playerServers.forEach { it.stopServer() }
         strategies.forEach { it.port.setAvailable() }
         completionLatch.countDown()
+        competitionContext.onEndLambdas.forEach { it(this) }
         logger.info { "Competition ${competitionId.id} completed" }
     }
 

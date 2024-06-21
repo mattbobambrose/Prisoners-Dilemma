@@ -12,6 +12,7 @@ import com.mattbobambrose.prisoner.game_server.Game
 import com.mattbobambrose.prisoner.game_server.SuspendingCountDownLatch
 import com.mattbobambrose.prisoner.game_server.gameServerModule
 import com.mattbobambrose.prisoner.player_server.Competition
+import com.mattbobambrose.prisoner.player_server.PlayerDSL.GameServerContext
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.call.body
 import io.ktor.client.request.get
@@ -26,6 +27,7 @@ import kotlin.concurrent.thread
 
 class GameServer {
     val competitionMap = ConcurrentHashMap<CompetitionId, Competition>()
+    val gameServerContext = GameServerContext(this)
     private val httpServer = embeddedServer(
         Netty,
         port = GAME_SERVER_PORT,
