@@ -13,6 +13,7 @@ import kotlinx.rpc.serialization.json
 import kotlinx.rpc.transport.ktor.client.installRPC
 import kotlinx.rpc.transport.ktor.client.rpc
 import kotlinx.rpc.transport.ktor.client.rpcConfig
+import java.net.URLDecoder
 import java.net.URLEncoder
 import java.time.Instant
 import java.time.ZoneOffset
@@ -71,4 +72,5 @@ object Utils {
         }
 
     fun String.encode() = URLEncoder.encode(this, UTF_8.toString()) ?: this
+    fun String.decode() = URLDecoder.decode(this, UTF_8.toString()) ?: this
 }

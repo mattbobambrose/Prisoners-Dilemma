@@ -3,7 +3,7 @@ package com.mattbobambrose.prisoner.strategy
 import com.mattbobambrose.prisoner.common.Decision
 import com.mattbobambrose.prisoner.common.Decision.COOPERATE
 import com.mattbobambrose.prisoner.common.Decision.DEFECT
-import com.mattbobambrose.prisoner.player_server.StrategyGroup
+import com.mattbobambrose.prisoner.player_server.Player
 
 class Friedman : GameStrategy() {
     private var betrayed = false
@@ -26,6 +26,6 @@ class Friedman : GameStrategy() {
     }
 
     companion object {
-        fun StrategyGroup.friedman() = addStrategy(Friedman())
+        fun Player.friedman() = addStrategy(Friedman())
     }
 }

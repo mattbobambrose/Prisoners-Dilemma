@@ -1,7 +1,7 @@
 package com.mattbobambrose.prisoner.strategy
 
 import com.mattbobambrose.prisoner.common.Decision
-import com.mattbobambrose.prisoner.player_server.StrategyGroup
+import com.mattbobambrose.prisoner.player_server.Player
 
 class Random : GameStrategy() {
     override fun chooseOption(
@@ -13,6 +13,6 @@ class Random : GameStrategy() {
 
     companion object {
         private val cd = listOf(Decision.COOPERATE, Decision.DEFECT)
-        fun StrategyGroup.random() = addStrategy(Random())
+        fun Player.random() = addStrategy(Random())
     }
 }

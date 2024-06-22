@@ -1,10 +1,12 @@
 package com.mattbobambrose.prisoner.game_server
 
+import GameServer
+import com.mattbobambrose.prisoner.common.CompetitionId
 import com.mattbobambrose.prisoner.common.Decision
 import com.mattbobambrose.prisoner.common.EndpointNames.KRPC_DECISION
 import com.mattbobambrose.prisoner.common.HttpObjects.StrategyInfo
 import com.mattbobambrose.prisoner.common.KRpcService
-import com.mattbobambrose.prisoner.player_server.PlayerServer.Companion.strategyMap
+import com.mattbobambrose.prisoner.player_server.Competition
 import io.ktor.http.HttpStatusCode
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.application.Application
@@ -22,15 +24,22 @@ import kotlinx.rpc.transport.ktor.server.RPC
 import kotlinx.rpc.transport.ktor.server.rpc
 import kotlin.coroutines.CoroutineContext
 
-class KRpcServiceImpl(override val coroutineContext: CoroutineContext) : KRpcService {
+class KRpcServiceImpl(
+    val competitionMap: Map<CompetitionId, Competition>,
+    override val coroutineContext: CoroutineContext
+) : KRpcService {
     override suspend fun requestDecision(
+        competitionId: CompetitionId,
         info: StrategyInfo,
         opponentInfo: StrategyInfo,
         round: Int,
         myHistory: List<Decision>,
         opponentHistory: List<Decision>
     ): Decision {
-        val strategy = strategyMap[info.fqn] ?: error("Invalid fqn: ${info.fqn}")
+        val competition =
+            competitionMap[competitionId] ?: error("Invalid competition id: $competitionId")
+        val strategy =
+            competition.strategyMap[info.fqn] ?: error("Invalid fqn: ${info.fqn}")
         return strategy.chooseOption(
             round,
             opponentInfo.fqn.name,
@@ -40,7 +49,10 @@ class KRpcServiceImpl(override val coroutineContext: CoroutineContext) : KRpcSer
     }
 }
 
-fun Application.gameServerModule() {
+fun Application.gameServerModule(
+    gameServer: GameServer,
+    competitionMap: Map<CompetitionId, Competition>
+) {
     install(RPC)
     routing {
         rpc("/$KRPC_DECISION") {
@@ -50,7 +62,7 @@ fun Application.gameServerModule() {
                 }
             }
 
-            registerService<KRpcService> { ctx -> KRpcServiceImpl(ctx) }
+            registerService<KRpcService> { ctx -> KRpcServiceImpl(competitionMap, ctx) }
         }
     }
 
@@ -73,6 +85,6 @@ fun Application.gameServerModule() {
         filter { false }
     }
 
-    gameServerRouting()
+    gameServerRouting(gameServer)
 
 }

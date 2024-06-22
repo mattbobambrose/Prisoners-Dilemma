@@ -17,6 +17,7 @@ class KRpcTransport(val client: RPCClient, val match: Match) : CallTransport {
             client
                 .withService<KRpcService>()
                 .requestDecision(
+                    match.competitionId,
                     info,
                     opponentInfo,
                     round,

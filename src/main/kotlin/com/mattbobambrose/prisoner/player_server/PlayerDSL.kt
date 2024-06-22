@@ -9,7 +9,7 @@ import com.mattbobambrose.prisoner.common.Utils.getTimestamp
 import java.util.concurrent.CountDownLatch
 
 object PlayerDSL {
-    class GameServerContext(val server: GameServer) {
+    class GameServerContext(val gameServer: GameServer) {
         val onBeginLambdas = mutableListOf<(GameServer) -> Unit>()
         val onEndLambdas = mutableListOf<(GameServer) -> Unit>()
     }
@@ -42,12 +42,12 @@ object PlayerDSL {
         block: CompetitionContext.() -> Unit
     ) {
         val competitionId = CompetitionId("$name-${getTimestamp()}")
-        val competition = Competition(server, competitionId, CountDownLatch(1))
-        server.competitionMap[competitionId] = competition
+        val competition = Competition(gameServer, competitionId, CountDownLatch(1))
+        gameServer.competitionMap[competitionId] = competition
         competition.competitionContext
             .apply(block)
             .onBeginLambdas.forEach { it(competition) }
-        competition.start()
+        competition.start(gameServer)
     }
 
     fun GameServerContext.onBegin(block: (GameServer) -> Unit) {
@@ -62,9 +62,9 @@ object PlayerDSL {
         competition.rules = Rules().apply(block)
     }
 
-    fun CompetitionContext.player(username: String, block: StrategyGroup.() -> Unit) {
+    fun CompetitionContext.player(username: String, block: Player.() -> Unit) {
         val port: Port = Port.nextAvailablePort()
-        competition.strategies += StrategyGroup(competition, Username(username), port).apply(block)
+        competition.players += Player(competition, Username(username), port).apply(block)
     }
 
     fun CompetitionContext.onBegin(block: (Competition) -> Unit) {

@@ -16,45 +16,60 @@ import com.mattbobambrose.prisoner.player_server.PlayerDSL.GameServerContext
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.call.body
 import io.ktor.client.request.get
-import io.ktor.server.application.Application
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.netty.Netty
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.CountDownLatch
 import kotlin.concurrent.thread
 
 class GameServer {
     val competitionMap = ConcurrentHashMap<CompetitionId, Competition>()
+    val gameRequestChannel = Channel<GameRequest>()
+    val pendingCompetitionChannel = Channel<Pair<CompetitionId, SuspendingCountDownLatch>>()
     val gameServerContext = GameServerContext(this)
+    val threadCompleteLatch = CountDownLatch(2)
     private val httpServer = embeddedServer(
         Netty,
         port = GAME_SERVER_PORT,
         host = "0.0.0.0",
-        module = Application::gameServerModule
+        module = {
+            gameServerModule(this@GameServer, competitionMap)
+        }
     )
 
     init {
         thread {
             runBlocking {
-                for (request in gameRequestChannel) {
-                    with(pendingGameRequestsMap) {
-                        putIfAbsent(request.competitionId, mutableListOf())
-                        get(request.competitionId)?.add(request)
-                            ?: error("Error adding participant")
+                try {
+                    for (request in gameRequestChannel) {
+                        with(pendingGameRequestsMap) {
+                            putIfAbsent(request.competitionId, mutableListOf())
+                            get(request.competitionId)?.add(request)
+                                ?: error("Error adding participant")
+                        }
                     }
+                } catch (e: Exception) {
+                    logger.error(e) { "Error processing game request****************" }
                 }
             }
+            threadCompleteLatch.countDown()
         }
 
         thread {
             runBlocking {
-                for ((competitionId, gameLatch) in pendingCompetitionChannel) {
-                    logger.info { "Starting game ${competitionId.id}" }
-                    launch { playGame(competitionId, gameLatch) }
+                try {
+                    for ((competitionId, gameLatch) in pendingCompetitionChannel) {
+                        logger.info { "Starting game ${competitionId.id}" }
+                        launch { playGame(competitionId, gameLatch) }
+                    }
+                } catch (e: Exception) {
+                    logger.error(e) { "Error processing competition request****************" }
                 }
             }
+            threadCompleteLatch.countDown()
         }
     }
 
@@ -65,6 +80,7 @@ class GameServer {
     fun stopServer() {
         gameRequestChannel.close()
         pendingCompetitionChannel.close()
+        threadCompleteLatch.await()
         httpServer.stop(1000, 1000)
     }
 
@@ -98,8 +114,6 @@ class GameServer {
 
     companion object {
         val logger = KotlinLogging.logger {}
-        val gameRequestChannel = Channel<GameRequest>()
-        val pendingCompetitionChannel = Channel<Pair<CompetitionId, SuspendingCountDownLatch>>()
         private val pendingGameRequestsMap =
             ConcurrentHashMap<CompetitionId, MutableList<GameRequest>>()
 

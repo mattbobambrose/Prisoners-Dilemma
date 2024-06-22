@@ -29,6 +29,7 @@ class Match(
     private var score2 = 0
     var isRunning = false
     var isFinished = false
+    val competitionId get() = parentGeneration.parentGame.competitionId
 
     suspend fun runMatch(client: ClientContext) {
         isRunning = true

@@ -3,6 +3,7 @@ package com.mattbobambrose.prisoner.game_server
 import com.mattbobambrose.prisoner.common.Decision
 import com.mattbobambrose.prisoner.common.EndpointNames.STRATEGY
 import com.mattbobambrose.prisoner.common.HttpObjects
+import com.mattbobambrose.prisoner.common.Utils.encode
 import com.mattbobambrose.prisoner.common.Utils.setJsonBody
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
@@ -14,7 +15,7 @@ class RestTransport(val client: HttpClient, val match: Match) : CallTransport {
         opponentInfo: HttpObjects.StrategyInfo,
         round: Int
     ): Decision {
-        return client.post("${info.url}/$STRATEGY/${info.fqn.name}") {
+        return client.post("${info.url}/$STRATEGY/${match.competitionId.id.encode()}/${info.fqn.name.encode()}") {
             setJsonBody(
                 HttpObjects.StrategyArgs(
                     round,

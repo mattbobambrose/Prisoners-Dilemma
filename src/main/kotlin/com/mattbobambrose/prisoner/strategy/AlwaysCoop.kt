@@ -2,7 +2,7 @@ package com.mattbobambrose.prisoner.strategy
 
 import com.mattbobambrose.prisoner.common.Decision
 import com.mattbobambrose.prisoner.common.Decision.COOPERATE
-import com.mattbobambrose.prisoner.player_server.StrategyGroup
+import com.mattbobambrose.prisoner.player_server.Player
 
 class AlwaysCoop : GameStrategy() {
     override fun chooseOption(
@@ -15,7 +15,7 @@ class AlwaysCoop : GameStrategy() {
     }
 
     companion object {
-        fun StrategyGroup.alwaysCoop(strategyCount: Int = 1) {
+        fun Player.alwaysCoop(strategyCount: Int = 1) {
             repeat(strategyCount) {
                 addStrategy(AlwaysCoop())
             }

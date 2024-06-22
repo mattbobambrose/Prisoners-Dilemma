@@ -1,5 +1,6 @@
 package com.mattbobambrose.prisoner.player_server
 
+import GameServer
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.application.Application
 import io.ktor.server.application.install
@@ -10,7 +11,7 @@ import io.ktor.server.plugins.statuspages.StatusPages
 import kotlinx.html.body
 import kotlinx.html.h3
 
-fun Application.playerModule() {
+fun Application.playerModule(gameServer: GameServer) {
     install(ContentNegotiation) {
         json()
     }
@@ -31,5 +32,5 @@ fun Application.playerModule() {
         }
     }
 
-    playerServerRouting()
+    playerServerRouting(gameServer)
 }

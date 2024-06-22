@@ -3,7 +3,7 @@ package com.mattbobambrose.prisoner.strategy
 import com.mattbobambrose.prisoner.common.Decision
 import com.mattbobambrose.prisoner.common.Decision.COOPERATE
 import com.mattbobambrose.prisoner.common.Decision.DEFECT
-import com.mattbobambrose.prisoner.player_server.StrategyGroup
+import com.mattbobambrose.prisoner.player_server.Player
 
 class TitForTwoTats : GameStrategy() {
     var oneDefect = false
@@ -30,6 +30,6 @@ class TitForTwoTats : GameStrategy() {
         }
 
     companion object {
-        fun StrategyGroup.titForTwoTats() = addStrategy(TitForTwoTats())
+        fun Player.titForTwoTats() = addStrategy(TitForTwoTats())
     }
 }

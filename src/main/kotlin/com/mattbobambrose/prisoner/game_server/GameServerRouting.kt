@@ -2,10 +2,11 @@ package com.mattbobambrose.prisoner.game_server
 
 import GameServer
 import GameServer.Companion.logger
-import GameServer.Companion.pendingCompetitionChannel
 import GameServer.Companion.pendingGames
 import com.mattbobambrose.prisoner.common.CompetitionId
 import com.mattbobambrose.prisoner.common.Constants.COMPETITION_ID
+import com.mattbobambrose.prisoner.common.Constants.FQN
+import com.mattbobambrose.prisoner.common.Constants.MATCH_ID
 import com.mattbobambrose.prisoner.common.EndpointNames.CSS_SOURCE
 import com.mattbobambrose.prisoner.common.EndpointNames.GO
 import com.mattbobambrose.prisoner.common.EndpointNames.MOREDETAILS
@@ -42,7 +43,7 @@ import kotlinx.html.td
 import kotlinx.html.thead
 import kotlinx.html.tr
 
-fun Application.gameServerRouting() {
+fun Application.gameServerRouting(gameServer: GameServer) {
     routing {
         staticResources("/static", "static")
         staticResources("/css", "css")
@@ -90,7 +91,7 @@ fun Application.gameServerRouting() {
             val competitionId =
                 call.request.queryParameters[COMPETITION_ID] ?: error("Missing $COMPETITION_ID")
             val gameLatch = SuspendingCountDownLatch()
-            pendingCompetitionChannel.send(CompetitionId(competitionId) to gameLatch)
+            gameServer.pendingCompetitionChannel.send(CompetitionId(competitionId) to gameLatch)
             logger.info { "Competition $competitionId requested to start" }
             gameLatch.await()
             call.respondRedirect("/$SCOREBOARD?$COMPETITION_ID=${competitionId.encode()}")
@@ -158,7 +159,7 @@ fun Application.gameServerRouting() {
             val competitionId =
                 call.request.queryParameters[COMPETITION_ID] ?: error("Missing $COMPETITION_ID")
             val genIndex = call.request.queryParameters["genIndex"] ?: error("Missing genIndex")
-            val fqn = call.request.queryParameters["fqn"] ?: error("Missing info")
+            val fqn = call.request.queryParameters[FQN] ?: error("Missing info")
             val game =
                 GameServer.findGame(CompetitionId(competitionId)) ?: error("Game not found")
             val matchList: List<Match> =
@@ -230,8 +231,8 @@ fun Application.gameServerRouting() {
             val competitionId =
                 call.request.queryParameters[COMPETITION_ID] ?: error("Missing $COMPETITION_ID")
             val game = GameServer.findGame(CompetitionId(competitionId)) ?: error("Game not found")
-            val fqn = call.request.queryParameters["fqn"] ?: error("Missing fqn")
-            val matchId = call.request.queryParameters["matchId"] ?: error("Missing matchId")
+            val fqn = call.request.queryParameters[FQN] ?: error("Missing fqn")
+            val matchId = call.request.queryParameters[MATCH_ID] ?: error("Missing matchId")
             val match = game.getMatch(matchId) ?: error("Match not found")
             val opponentFqn = match.getOpponentFqn(fqn)
             call.respondHtml {
@@ -298,7 +299,7 @@ fun Application.gameServerRouting() {
         post("/$REGISTER") {
             val participant = call.receive<GameRequest>()
             logger.info { "Registered: $participant" }
-            GameServer.gameRequestChannel.send(participant)
+            gameServer.gameRequestChannel.send(participant)
             call.respondText("Registered")
         }
     }

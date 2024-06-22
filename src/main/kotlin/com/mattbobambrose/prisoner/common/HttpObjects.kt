@@ -4,7 +4,7 @@ import kotlinx.serialization.Serializable
 
 class HttpObjects {
     @Serializable
-    data class GameParticipant(
+    data class PlayerDTO(
         val username: Username,
         val competitionId: CompetitionId,
         val fqn: StrategyFqn

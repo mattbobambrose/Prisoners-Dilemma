@@ -3,7 +3,7 @@ package com.mattbobambrose.prisoner.strategy
 import com.mattbobambrose.prisoner.common.Decision
 import com.mattbobambrose.prisoner.common.Decision.COOPERATE
 import com.mattbobambrose.prisoner.common.Decision.DEFECT
-import com.mattbobambrose.prisoner.player_server.StrategyGroup
+import com.mattbobambrose.prisoner.player_server.Player
 
 class TitForTat : GameStrategy() {
     override fun chooseOption(
@@ -19,6 +19,6 @@ class TitForTat : GameStrategy() {
         }
 
     companion object {
-        fun StrategyGroup.titForTat() = addStrategy(TitForTat())
+        fun Player.titForTat() = addStrategy(TitForTat())
     }
 }

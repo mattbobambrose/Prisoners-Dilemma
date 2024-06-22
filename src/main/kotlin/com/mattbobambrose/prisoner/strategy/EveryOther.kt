@@ -3,7 +3,7 @@ package com.mattbobambrose.prisoner.strategy
 import com.mattbobambrose.prisoner.common.Decision
 import com.mattbobambrose.prisoner.common.Decision.COOPERATE
 import com.mattbobambrose.prisoner.common.Decision.DEFECT
-import com.mattbobambrose.prisoner.player_server.StrategyGroup
+import com.mattbobambrose.prisoner.player_server.Player
 
 class EveryOther : GameStrategy() {
     override fun chooseOption(
@@ -18,7 +18,7 @@ class EveryOther : GameStrategy() {
         }
 
     companion object {
-        fun StrategyGroup.everyOther(strategyCount: Int = 1) {
+        fun Player.everyOther(strategyCount: Int = 1) {
             repeat(strategyCount) {
                 addStrategy(EveryOther())
             }

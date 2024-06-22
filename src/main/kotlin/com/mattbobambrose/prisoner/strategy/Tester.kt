@@ -3,7 +3,7 @@ package com.mattbobambrose.prisoner.strategy
 import com.mattbobambrose.prisoner.common.Decision
 import com.mattbobambrose.prisoner.common.Decision.COOPERATE
 import com.mattbobambrose.prisoner.common.Decision.DEFECT
-import com.mattbobambrose.prisoner.player_server.StrategyGroup
+import com.mattbobambrose.prisoner.player_server.Player
 
 class Tester : GameStrategy() {
     private var opponentSecondMove: Decision = DEFECT
@@ -36,6 +36,6 @@ class Tester : GameStrategy() {
     }
 
     companion object {
-        fun StrategyGroup.tester() = addStrategy(Tester())
+        fun Player.tester() = addStrategy(Tester())
     }
 }

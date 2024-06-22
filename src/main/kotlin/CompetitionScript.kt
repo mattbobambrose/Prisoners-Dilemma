@@ -21,23 +21,24 @@ object CompetitionScript {
             }
             repeat(1) {
                 competition("Competition $it") {
-                    onBegin {
-                        logger.info { "Competition $it started" }
-                    }
-                    onEnd {
-                        logger.info { "Competition $it ended" }
-                    }
+//                    onBegin {
+//                        logger.info { "Competition $it started" }
+//                    }
+//                    onEnd {
+//                        logger.info { "Competition $it ended" }
+//                    }
                     rules {
                         rounds = 25
                     }
                     player("Matthew") {
                         titForTat()
+                        titForTat()
                     }
                     player("Paul") {
-                        titForTat()
+//                        titForTat()
                     }
                     player("Anh") {
-                        titForTat()
+//                        titForTat()
                     }
                 }
             }
