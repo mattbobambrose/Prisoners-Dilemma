@@ -1,4 +1,6 @@
+import com.mattbobambrose.prisoner.game_server.TransportType.REST
 import com.mattbobambrose.prisoner.player_server.PlayerDSL.competition
+import com.mattbobambrose.prisoner.player_server.PlayerDSL.config
 import com.mattbobambrose.prisoner.player_server.PlayerDSL.gameServer
 import com.mattbobambrose.prisoner.player_server.PlayerDSL.onBegin
 import com.mattbobambrose.prisoner.player_server.PlayerDSL.onEnd
@@ -13,6 +15,10 @@ object CompetitionScript {
     @JvmStatic
     fun main(args: Array<String>) {
         gameServer {
+            config {
+                concurrentMatches = 10
+                transportType = REST
+            }
             onBegin {
                 logger.info { "Game server started" }
             }
@@ -21,12 +27,13 @@ object CompetitionScript {
             }
             repeat(1) {
                 competition("Competition $it") {
-//                    onBegin {
-//                        logger.info { "Competition $it started" }
-//                    }
-//                    onEnd {
-//                        logger.info { "Competition $it ended" }
-//                    }
+                    println("${competition.gameServer.concurrentMatches}*********")
+                    onBegin {
+                        logger.info { "Competition $it started" }
+                    }
+                    onEnd {
+                        logger.info { "Competition $it ended" }
+                    }
                     rules {
                         rounds = 25
                     }

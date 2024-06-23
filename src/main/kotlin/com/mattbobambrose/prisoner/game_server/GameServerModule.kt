@@ -2,9 +2,7 @@ package com.mattbobambrose.prisoner.game_server
 
 import GameServer
 import com.mattbobambrose.prisoner.common.CompetitionId
-import com.mattbobambrose.prisoner.common.Decision
 import com.mattbobambrose.prisoner.common.EndpointNames.KRPC_DECISION
-import com.mattbobambrose.prisoner.common.HttpObjects.StrategyInfo
 import com.mattbobambrose.prisoner.common.KRpcService
 import com.mattbobambrose.prisoner.player_server.Competition
 import io.ktor.http.HttpStatusCode
@@ -22,32 +20,6 @@ import kotlinx.html.h3
 import kotlinx.rpc.serialization.json
 import kotlinx.rpc.transport.ktor.server.RPC
 import kotlinx.rpc.transport.ktor.server.rpc
-import kotlin.coroutines.CoroutineContext
-
-class KRpcServiceImpl(
-    val competitionMap: Map<CompetitionId, Competition>,
-    override val coroutineContext: CoroutineContext
-) : KRpcService {
-    override suspend fun requestDecision(
-        competitionId: CompetitionId,
-        info: StrategyInfo,
-        opponentInfo: StrategyInfo,
-        round: Int,
-        myHistory: List<Decision>,
-        opponentHistory: List<Decision>
-    ): Decision {
-        val competition =
-            competitionMap[competitionId] ?: error("Invalid competition id: $competitionId")
-        val strategy =
-            competition.strategyMap[info.fqn] ?: error("Invalid fqn: ${info.fqn}")
-        return strategy.chooseOption(
-            round,
-            opponentInfo.fqn.name,
-            myHistory,
-            opponentHistory
-        )
-    }
-}
 
 fun Application.gameServerModule(
     gameServer: GameServer,
@@ -84,7 +56,5 @@ fun Application.gameServerModule(
     install(CallLogging) {
         filter { false }
     }
-
     gameServerRouting(gameServer)
-
 }

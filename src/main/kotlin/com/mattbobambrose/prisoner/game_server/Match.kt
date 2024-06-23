@@ -1,6 +1,5 @@
 package com.mattbobambrose.prisoner.game_server
 
-import com.mattbobambrose.prisoner.common.Configuration.transportType
 import com.mattbobambrose.prisoner.common.Decision
 import com.mattbobambrose.prisoner.common.Decision.COOPERATE
 import com.mattbobambrose.prisoner.common.HttpObjects.Rules
@@ -15,7 +14,7 @@ import kotlinx.coroutines.delay
 import kotlin.time.Duration.Companion.milliseconds
 
 class Match(
-    val parentGeneration: Generation,
+    val generation: Generation,
     private val info1: StrategyInfo,
     private val info2: StrategyInfo,
     private val scoreboard: Scoreboard,
@@ -29,12 +28,12 @@ class Match(
     private var score2 = 0
     var isRunning = false
     var isFinished = false
-    val competitionId get() = parentGeneration.parentGame.competitionId
+    val competitionId get() = generation.game.competitionId
 
     suspend fun runMatch(client: ClientContext) {
         isRunning = true
         val serverImpl: CallTransport =
-            when (transportType) {
+            when (generation.game.gameServer.transportType) {
                 REST -> RestTransport(client.httpClient, this)
                 GRPC -> throw NotImplementedError("gRPC not supported")
                 KRPC -> KRpcTransport(client.krpcClient, this)

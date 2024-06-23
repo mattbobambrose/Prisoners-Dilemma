@@ -1,5 +1,6 @@
 package com.mattbobambrose.prisoner.game_server
 
+import GameServer
 import com.mattbobambrose.prisoner.common.CompetitionId
 import com.mattbobambrose.prisoner.common.Constants.GAME_SERVER_PORT
 import com.mattbobambrose.prisoner.common.EndpointNames.KRPC_DECISION
@@ -50,6 +51,7 @@ class ClientContext : Closeable {
 }
 
 class Game(
+    val gameServer: GameServer,
     val competitionId: CompetitionId,
     private val infoList: List<StrategyInfo>,
     private val generationCount: Int

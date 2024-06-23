@@ -1,5 +1,6 @@
 import com.mattbobambrose.prisoner.common.CompetitionId
 import com.mattbobambrose.prisoner.common.Constants.COMPETITION_ID
+import com.mattbobambrose.prisoner.common.Constants.CONCURRENT_MATCHES
 import com.mattbobambrose.prisoner.common.Constants.GAME_SERVER_PORT
 import com.mattbobambrose.prisoner.common.Constants.GENERATION_COUNT
 import com.mattbobambrose.prisoner.common.EndpointNames.STRATEGYFQNS
@@ -10,6 +11,7 @@ import com.mattbobambrose.prisoner.common.Utils.createHttpClient
 import com.mattbobambrose.prisoner.common.Utils.encode
 import com.mattbobambrose.prisoner.game_server.Game
 import com.mattbobambrose.prisoner.game_server.SuspendingCountDownLatch
+import com.mattbobambrose.prisoner.game_server.TransportType
 import com.mattbobambrose.prisoner.game_server.gameServerModule
 import com.mattbobambrose.prisoner.player_server.Competition
 import com.mattbobambrose.prisoner.player_server.PlayerDSL.GameServerContext
@@ -26,6 +28,8 @@ import java.util.concurrent.CountDownLatch
 import kotlin.concurrent.thread
 
 class GameServer {
+    var concurrentMatches = CONCURRENT_MATCHES
+    var transportType = TransportType.REST
     val competitionMap = ConcurrentHashMap<CompetitionId, Competition>()
     val gameRequestChannel = Channel<GameRequest>()
     val pendingCompetitionChannel = Channel<Pair<CompetitionId, SuspendingCountDownLatch>>()
@@ -43,16 +47,12 @@ class GameServer {
     init {
         thread {
             runBlocking {
-                try {
-                    for (request in gameRequestChannel) {
-                        with(pendingGameRequestsMap) {
-                            putIfAbsent(request.competitionId, mutableListOf())
-                            get(request.competitionId)?.add(request)
-                                ?: error("Error adding participant")
-                        }
+                for (request in gameRequestChannel) {
+                    with(pendingGameRequestsMap) {
+                        putIfAbsent(request.competitionId, mutableListOf())
+                        get(request.competitionId)?.add(request)
+                            ?: error("Error adding participant")
                     }
-                } catch (e: Exception) {
-                    logger.error(e) { "Error processing game request****************" }
                 }
             }
             threadCompleteLatch.countDown()
@@ -60,13 +60,9 @@ class GameServer {
 
         thread {
             runBlocking {
-                try {
-                    for ((competitionId, gameLatch) in pendingCompetitionChannel) {
-                        logger.info { "Starting game ${competitionId.id}" }
-                        launch { playGame(competitionId, gameLatch) }
-                    }
-                } catch (e: Exception) {
-                    logger.error(e) { "Error processing competition request****************" }
+                for ((competitionId, gameLatch) in pendingCompetitionChannel) {
+                    logger.info { "Starting game ${competitionId.id}" }
+                    launch { playGame(competitionId, gameLatch) }
                 }
             }
             threadCompleteLatch.countDown()
@@ -102,7 +98,7 @@ class GameServer {
                         }
                 }.flatten()
 
-            with(Game(competitionId, strategyInfoList, GENERATION_COUNT)) {
+            with(Game(this, competitionId, strategyInfoList, GENERATION_COUNT)) {
                 gameLatch.countDown()
                 gameList.add(this)
                 runGame(requests.first().rules)

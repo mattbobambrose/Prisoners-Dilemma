@@ -10,8 +10,20 @@ import java.util.concurrent.CountDownLatch
 
 object PlayerDSL {
     class GameServerContext(val gameServer: GameServer) {
+        var concurrentMatches
+            get() = gameServer.concurrentMatches
+            set(value) {
+                gameServer.concurrentMatches = value
+            }
+        var transportType
+            get() = gameServer.transportType
+            set(value) {
+                gameServer.transportType = value
+            }
         val onBeginLambdas = mutableListOf<(GameServer) -> Unit>()
         val onEndLambdas = mutableListOf<(GameServer) -> Unit>()
+        val competitionLamdas = mutableListOf<(GameServer) -> Unit>()
+        val configLambdas = mutableListOf<(GameServerContext) -> Unit>()
     }
 
     class CompetitionContext(val competition: Competition) {
@@ -22,32 +34,41 @@ object PlayerDSL {
     fun gameServer(block: GameServerContext.() -> Unit) {
         with(GameServer()) {
             startServer()
-            gameServerContext
-                .apply(block)
-                .onBeginLambdas.forEach { it(this) }
-            competitionMap.forEach { (_, competition) ->
-                competition.completionLatch.await()
+            gameServerContext.apply {
+                apply(block)
+                onBeginLambdas.forEach { it(this@with) }
+                configLambdas.forEach { it(gameServerContext) }
+                competitionLamdas.forEach { it(this@with) }
+                competitionMap.forEach { (_, competition) ->
+                    competition.completionLatch.await()
+                }
+                competitionMap.keys.toList().forEach { competitionId ->
+                    competitionMap.remove(competitionId)
+                        ?: error("Error removing competition: $competitionId")
+                }
+                onEndLambdas.forEach { it(this@with) }
             }
-            competitionMap.keys.toList().forEach { competitionId ->
-                competitionMap.remove(competitionId)
-                    ?: error("Error removing competition: $competitionId")
-            }
-            gameServerContext.onEndLambdas.forEach { it(this) }
             stopServer()
         }
+    }
+
+    fun GameServerContext.config(block: GameServerContext.() -> Unit) {
+        configLambdas += block
     }
 
     fun GameServerContext.competition(
         name: String,
         block: CompetitionContext.() -> Unit
     ) {
-        val competitionId = CompetitionId("$name-${getTimestamp()}")
-        val competition = Competition(gameServer, competitionId, CountDownLatch(1))
-        gameServer.competitionMap[competitionId] = competition
-        competition.competitionContext
-            .apply(block)
-            .onBeginLambdas.forEach { it(competition) }
-        competition.start(gameServer)
+        competitionLamdas += {
+            val competitionId = CompetitionId("$name-${getTimestamp()}")
+            val competition = Competition(gameServer, competitionId, CountDownLatch(1))
+            gameServer.competitionMap[competitionId] = competition
+            competition.competitionContext
+                .apply(block)
+                .onBeginLambdas.forEach { it(competition) }
+            competition.start(gameServer)
+        }
     }
 
     fun GameServerContext.onBegin(block: (GameServer) -> Unit) {
