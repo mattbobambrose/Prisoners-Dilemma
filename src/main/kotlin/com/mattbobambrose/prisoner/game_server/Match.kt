@@ -8,6 +8,7 @@ import com.mattbobambrose.prisoner.common.MatchId
 import com.mattbobambrose.prisoner.common.Utils.randomId
 import com.mattbobambrose.prisoner.game_server.TransportType.GRPC
 import com.mattbobambrose.prisoner.game_server.TransportType.KRPC
+import com.mattbobambrose.prisoner.game_server.TransportType.LOCAL
 import com.mattbobambrose.prisoner.game_server.TransportType.REST
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.delay
@@ -34,6 +35,7 @@ class Match(
         isRunning = true
         val serverImpl: CallTransport =
             when (generation.game.gameServer.transportType) {
+                LOCAL -> LocalTransport(this)
                 REST -> RestTransport(client.httpClient, this)
                 GRPC -> throw NotImplementedError("gRPC not supported")
                 KRPC -> KRpcTransport(client.krpcClient, this)

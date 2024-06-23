@@ -6,7 +6,7 @@ import com.mattbobambrose.prisoner.common.Constants.COMPETITION_ID
 import com.mattbobambrose.prisoner.common.Constants.FQN
 import com.mattbobambrose.prisoner.common.EndpointNames.STRATEGY
 import com.mattbobambrose.prisoner.common.EndpointNames.STRATEGYFQNS
-import com.mattbobambrose.prisoner.common.HttpObjects
+import com.mattbobambrose.prisoner.common.HttpObjects.StrategyArgs
 import com.mattbobambrose.prisoner.common.HttpObjects.StrategyResponse
 import com.mattbobambrose.prisoner.common.StrategyFqn
 import com.mattbobambrose.prisoner.common.Utils.decode
@@ -48,7 +48,7 @@ fun Application.playerServerRouting(gameServer: GameServer) {
             val competition =
                 gameServer.competitionMap[competitionId] ?: error("Invalid competition id")
             val strategy = competition.strategyMap[fqn] ?: error("Invalid fqn: $fqn")
-            val args = call.receive<HttpObjects.StrategyArgs>()
+            val args = call.receive<StrategyArgs>()
             val decision = with(args) {
                 strategy.chooseOption(roundNumber, opponentInfo.fqn.name, myMoves, opponentMoves)
             }

@@ -19,7 +19,7 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.call.body
 import io.ktor.client.request.get
 import io.ktor.server.engine.embeddedServer
-import io.ktor.server.netty.Netty
+import io.ktor.server.netty.NettyApplicationEngine
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -35,14 +35,7 @@ class GameServer {
     val pendingCompetitionChannel = Channel<Pair<CompetitionId, SuspendingCountDownLatch>>()
     val gameServerContext = GameServerContext(this)
     val threadCompleteLatch = CountDownLatch(2)
-    private val httpServer = embeddedServer(
-        Netty,
-        port = GAME_SERVER_PORT,
-        host = "0.0.0.0",
-        module = {
-            gameServerModule(this@GameServer, competitionMap)
-        }
-    )
+    private lateinit var httpServer: NettyApplicationEngine
 
     init {
         thread {
@@ -70,14 +63,25 @@ class GameServer {
     }
 
     fun startServer() {
-        httpServer.start(wait = false)
+        if (transportType.requiresHttp) {
+            httpServer = embeddedServer(
+                io.ktor.server.netty.Netty,
+                port = GAME_SERVER_PORT,
+                host = "0.0.0.0",
+                module = {
+                    gameServerModule(this@GameServer, competitionMap)
+                })
+            httpServer.start(wait = false)
+        }
     }
 
     fun stopServer() {
         gameRequestChannel.close()
         pendingCompetitionChannel.close()
         threadCompleteLatch.await()
-        httpServer.stop(1000, 1000)
+        if (transportType.requiresHttp) {
+            httpServer.stop(1000, 1000)
+        }
     }
 
     suspend fun playGame(competitionId: CompetitionId, gameLatch: SuspendingCountDownLatch) {
@@ -115,11 +119,6 @@ class GameServer {
 
         // TODO Not being purged
         val gameList = mutableListOf<Game>()
-
-        @JvmStatic
-        fun main(args: Array<String>) {
-            GameServer().startServer()
-        }
 
         fun findGame(competitionId: CompetitionId): Game? =
             gameList.find { it.competitionId == competitionId }

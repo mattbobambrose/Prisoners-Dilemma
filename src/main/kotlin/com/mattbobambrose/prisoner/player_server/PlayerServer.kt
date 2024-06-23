@@ -13,24 +13,29 @@ import io.ktor.client.HttpClient
 import io.ktor.client.request.post
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.engine.embeddedServer
-import io.ktor.server.netty.Netty
+import io.ktor.server.netty.NettyApplicationEngine
 import kotlinx.coroutines.runBlocking
 
 class PlayerServer(val gameServer: GameServer, val portNumber: Int) {
-    private val playerHttpServer = embeddedServer(
-        Netty,
-        port = portNumber,
-        host = "0.0.0.0",
-        module = { playerModule(gameServer) }
-    ).also { logger.info { "Player server created on port $portNumber" } }
+    val transportType = gameServer.transportType
+    private lateinit var playerHttpServer: NettyApplicationEngine
 
     fun startServer() {
-        logger.info { "Starting player server on port $portNumber" }
-        playerHttpServer.start(wait = false)
+        if (transportType.requiresHttp) {
+            playerHttpServer = embeddedServer(
+                io.ktor.server.netty.Netty,
+                port = portNumber,
+                host = "0.0.0.0",
+                module = { playerModule(gameServer) }
+            ).also { logger.info { "Player server created on port $portNumber" } }
+            playerHttpServer.start(wait = false)
+        }
     }
 
     fun stopServer() {
-        playerHttpServer.stop(1000, 1000)
+        if (transportType.requiresHttp) {
+            playerHttpServer.stop(1000, 1000)
+        }
     }
 
     companion object {

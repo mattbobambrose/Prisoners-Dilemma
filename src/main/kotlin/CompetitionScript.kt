@@ -1,4 +1,4 @@
-import com.mattbobambrose.prisoner.game_server.TransportType.REST
+import com.mattbobambrose.prisoner.game_server.TransportType.LOCAL
 import com.mattbobambrose.prisoner.player_server.PlayerDSL.competition
 import com.mattbobambrose.prisoner.player_server.PlayerDSL.config
 import com.mattbobambrose.prisoner.player_server.PlayerDSL.gameServer
@@ -17,7 +17,7 @@ object CompetitionScript {
         gameServer {
             config {
                 concurrentMatches = 10
-                transportType = REST
+                transportType = LOCAL
             }
             onBegin {
                 logger.info { "Game server started" }
