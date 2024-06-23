@@ -6,6 +6,7 @@ import com.mattbobambrose.prisoner.common.HttpObjects.Rules
 import com.mattbobambrose.prisoner.common.Port
 import com.mattbobambrose.prisoner.common.Username
 import com.mattbobambrose.prisoner.common.Utils.getTimestamp
+import com.mattbobambrose.prisoner.game_server.TransportType
 import java.util.concurrent.CountDownLatch
 
 object PlayerDSL {
@@ -14,11 +15,6 @@ object PlayerDSL {
             get() = gameServer.concurrentMatches
             set(value) {
                 gameServer.concurrentMatches = value
-            }
-        var transportType
-            get() = gameServer.transportType
-            set(value) {
-                gameServer.transportType = value
             }
         val onBeginLambdas = mutableListOf<(GameServer) -> Unit>()
         val onEndLambdas = mutableListOf<(GameServer) -> Unit>()
@@ -31,9 +27,12 @@ object PlayerDSL {
         val onEndLambdas = mutableListOf<(Competition) -> Unit>()
     }
 
-    fun gameServer(block: GameServerContext.() -> Unit) {
-        with(GameServer()) {
-            startServer()
+    fun gameServer(transportType: TransportType, block: GameServerContext.() -> Unit) {
+        val gs = GameServer(transportType)
+        Thread.sleep(1000)
+        gs.startServer()
+        with(gs) {
+//            startServer()
             gameServerContext.apply {
                 apply(block)
                 onBeginLambdas.forEach { it(this@with) }

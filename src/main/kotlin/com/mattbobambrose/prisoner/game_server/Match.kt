@@ -6,10 +6,6 @@ import com.mattbobambrose.prisoner.common.HttpObjects.Rules
 import com.mattbobambrose.prisoner.common.HttpObjects.StrategyInfo
 import com.mattbobambrose.prisoner.common.MatchId
 import com.mattbobambrose.prisoner.common.Utils.randomId
-import com.mattbobambrose.prisoner.game_server.TransportType.GRPC
-import com.mattbobambrose.prisoner.game_server.TransportType.KRPC
-import com.mattbobambrose.prisoner.game_server.TransportType.LOCAL
-import com.mattbobambrose.prisoner.game_server.TransportType.REST
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.delay
 import kotlin.time.Duration.Companion.milliseconds
@@ -31,18 +27,11 @@ class Match(
     var isFinished = false
     val competitionId get() = generation.game.competitionId
 
-    suspend fun runMatch(client: ClientContext) {
+    suspend fun runMatch(callTransport: CallTransport) {
         isRunning = true
-        val serverImpl: CallTransport =
-            when (generation.game.gameServer.transportType) {
-                LOCAL -> LocalTransport(this)
-                REST -> RestTransport(client.httpClient, this)
-                GRPC -> throw NotImplementedError("gRPC not supported")
-                KRPC -> KRpcTransport(client.krpcClient, this)
-            }
         for (i in 0 until rules.rounds) {
-            val d1 = serverImpl.requestDecision(info1, info2, i)
-            val d2 = serverImpl.requestDecision(info2, info1, i)
+            val d1 = callTransport.requestDecision(this, info1, info2, i)
+            val d2 = callTransport.requestDecision(this, info2, info1, i)
 
             updateIncreases(d1, d2)
             updateScore()

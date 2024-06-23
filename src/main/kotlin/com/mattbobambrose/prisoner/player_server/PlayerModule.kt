@@ -1,6 +1,7 @@
 package com.mattbobambrose.prisoner.player_server
 
 import GameServer
+import com.mattbobambrose.prisoner.game_server.TransportType
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.application.Application
 import io.ktor.server.application.install
@@ -32,5 +33,9 @@ fun Application.playerModule(gameServer: GameServer) {
         }
     }
 
-    playerServerRouting(gameServer)
+    when (gameServer.transportType) {
+        TransportType.REST -> configureRestEndpoints(gameServer)
+        TransportType.KRPC -> configureKrpcEndpoints(gameServer)
+        else -> error("Unsupported transport type")
+    }
 }

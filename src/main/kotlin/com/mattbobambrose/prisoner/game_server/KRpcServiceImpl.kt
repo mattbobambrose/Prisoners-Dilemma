@@ -3,6 +3,7 @@ package com.mattbobambrose.prisoner.game_server
 import com.mattbobambrose.prisoner.common.CompetitionId
 import com.mattbobambrose.prisoner.common.Decision
 import com.mattbobambrose.prisoner.common.HttpObjects
+import com.mattbobambrose.prisoner.common.HttpObjects.GameRequest
 import com.mattbobambrose.prisoner.common.KRpcService
 import com.mattbobambrose.prisoner.player_server.Competition
 import kotlin.coroutines.CoroutineContext
@@ -30,4 +31,11 @@ class KRpcServiceImpl(
             opponentHistory
         )
     }
+
+    override suspend fun getStrategyFqnList(
+        competitionId: CompetitionId,
+        gameRequest: GameRequest
+    ) =
+        competitionMap[competitionId]?.getStrategyFqnList(gameRequest.username)
+            ?: error("Invalid competition id: $competitionId")
 }

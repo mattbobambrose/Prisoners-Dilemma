@@ -1,10 +1,15 @@
 package com.mattbobambrose.prisoner.game_server
 
+import GameServer
+import com.mattbobambrose.prisoner.common.CompetitionId
 import com.mattbobambrose.prisoner.common.Decision
+import com.mattbobambrose.prisoner.common.HttpObjects.GameRequest
 import com.mattbobambrose.prisoner.common.HttpObjects.StrategyInfo
+import com.mattbobambrose.prisoner.common.StrategyFqn
 
-class LocalTransport(val match: Match) : CallTransport {
+class LocalTransport(val gameServer: GameServer) : CallTransport {
     override suspend fun requestDecision(
+        match: Match,
         info: StrategyInfo,
         opponentInfo: StrategyInfo,
         round: Int
@@ -18,5 +23,13 @@ class LocalTransport(val match: Match) : CallTransport {
             match.makeHistory(info),
             match.makeHistory(opponentInfo)
         )
+    }
+
+    override suspend fun getStrategyFqnList(
+        competitionId: CompetitionId,
+        gameRequest: GameRequest
+    ): List<StrategyFqn> {
+        return gameServer.competitionMap[competitionId]?.getStrategyFqnList(gameRequest.username)
+            ?: error("Invalid competition id: $competitionId")
     }
 }

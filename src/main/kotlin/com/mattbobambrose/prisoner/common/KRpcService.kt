@@ -12,4 +12,9 @@ interface KRpcService : RPC {
         myHistory: List<Decision>,
         opponentHistory: List<Decision>
     ): Decision
+
+    suspend fun getStrategyFqnList(
+        competitionId: CompetitionId,
+        gameRequest: HttpObjects.GameRequest
+    ): List<StrategyFqn>
 }

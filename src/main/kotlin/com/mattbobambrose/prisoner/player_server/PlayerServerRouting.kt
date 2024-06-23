@@ -4,21 +4,45 @@ import GameServer
 import com.mattbobambrose.prisoner.common.CompetitionId
 import com.mattbobambrose.prisoner.common.Constants.COMPETITION_ID
 import com.mattbobambrose.prisoner.common.Constants.FQN
+import com.mattbobambrose.prisoner.common.EndpointNames.KRPC_DECISION
 import com.mattbobambrose.prisoner.common.EndpointNames.STRATEGY
 import com.mattbobambrose.prisoner.common.EndpointNames.STRATEGYFQNS
 import com.mattbobambrose.prisoner.common.HttpObjects.StrategyArgs
 import com.mattbobambrose.prisoner.common.HttpObjects.StrategyResponse
+import com.mattbobambrose.prisoner.common.KRpcService
 import com.mattbobambrose.prisoner.common.StrategyFqn
+import com.mattbobambrose.prisoner.common.Username
 import com.mattbobambrose.prisoner.common.Utils.decode
+import com.mattbobambrose.prisoner.game_server.KRpcServiceImpl
 import io.ktor.server.application.Application
 import io.ktor.server.application.call
+import io.ktor.server.application.install
 import io.ktor.server.request.receive
 import io.ktor.server.response.respond
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.routing
+import kotlinx.rpc.serialization.json
+import kotlinx.rpc.transport.ktor.server.RPC
+import kotlinx.rpc.transport.ktor.server.rpc
 
-fun Application.playerServerRouting(gameServer: GameServer) {
+fun Application.configureKrpcEndpoints(gameServer: GameServer) {
+    PlayerServer.logger.info { "Configuring KRPC endpoints" }
+    install(RPC)
+    routing {
+        rpc("/$KRPC_DECISION") {
+            rpcConfig {
+                serialization {
+                    json()
+                }
+            }
+            registerService<KRpcService> { ctx -> KRpcServiceImpl(gameServer.competitionMap, ctx) }
+        }
+    }
+}
+
+fun Application.configureRestEndpoints(gameServer: GameServer) {
+    PlayerServer.logger.info { "Configuring REST endpoints" }
     routing {
         get("/$STRATEGYFQNS") {
             val competitionId =
@@ -26,14 +50,7 @@ fun Application.playerServerRouting(gameServer: GameServer) {
             val username = call.request.queryParameters["username"] ?: error("Missing username")
             val competition = gameServer.competitionMap[CompetitionId(competitionId)]
                 ?: error("Invalid competition id")
-            val response = competition.participantMap
-                .filter { it.key.id == competitionId }
-                .map { participants ->
-                    participants.value
-                        .filter { it.username.name == username }
-                        .map { it.fqn }
-                }
-                .flatten()
+            val response = competition.getStrategyFqnList(Username(username))
             GameServer.logger.info { "Response: $response" }
             call.respond(response)
         }

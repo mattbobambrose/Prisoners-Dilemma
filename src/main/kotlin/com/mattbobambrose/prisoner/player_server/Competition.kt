@@ -63,6 +63,17 @@ class Competition(
         strategyMap[strategy.fqn] = strategy
     }
 
+    fun getStrategyFqnList(username: Username): List<StrategyFqn> {
+        return participantMap
+            .filter { it.key.id == competitionId.id }
+            .map { participants ->
+                participants.value
+                    .filter { it.username.name == username.name }
+                    .map { it.fqn }
+            }
+            .flatten()
+    }
+
     fun onCompletion() {
         playerServers.forEach { it.stopServer() }
         players.forEach { it.port.setAvailable() }

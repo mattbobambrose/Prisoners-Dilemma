@@ -1,19 +1,21 @@
 package com.mattbobambrose.prisoner.game_server
 
-import com.mattbobambrose.prisoner.common.Decision
+import com.mattbobambrose.prisoner.common.CompetitionId
+import com.mattbobambrose.prisoner.common.HttpObjects.GameRequest
 import com.mattbobambrose.prisoner.common.HttpObjects.StrategyInfo
 import com.mattbobambrose.prisoner.common.KRpcService
 import kotlinx.rpc.RPCClient
 import kotlinx.rpc.client.withService
 import kotlinx.rpc.internal.streamScoped
 
-class KRpcTransport(val client: RPCClient, val match: Match) : CallTransport {
+class KRpcTransport(val client: RPCClient) : CallTransport {
     override suspend fun requestDecision(
+        match: Match,
         info: StrategyInfo,
         opponentInfo: StrategyInfo,
         round: Int
-    ): Decision {
-        return streamScoped {
+    ) =
+        streamScoped {
             client
                 .withService<KRpcService>()
                 .requestDecision(
@@ -25,5 +27,14 @@ class KRpcTransport(val client: RPCClient, val match: Match) : CallTransport {
                     match.makeHistory(opponentInfo)
                 )
         }
-    }
+
+    override suspend fun getStrategyFqnList(
+        competitionId: CompetitionId,
+        gameRequest: GameRequest
+    ) =
+        streamScoped {
+            client
+                .withService<KRpcService>()
+                .getStrategyFqnList(competitionId, gameRequest)
+        }
 }

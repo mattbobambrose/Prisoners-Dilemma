@@ -60,13 +60,11 @@ class Game(
     var isFinished = false
     var currentInfo = infoList
 
-    fun runGame(rules: Rules) {
-        ClientContext().use { client ->
-            for (i in 0..<generationCount) {
-                Generation(this@Game, currentInfo, rules).also { generation ->
-                    generationList.add(generation)
-                    generation.playMatches(client)
-                }
+    fun runGame(callTransport: CallTransport, rules: Rules) {
+        for (i in 0..<generationCount) {
+            Generation(this@Game, currentInfo, rules).also { generation ->
+                generationList.add(generation)
+                generation.playMatches(callTransport)
             }
         }
         assert(generationList.all { it.isFinished })

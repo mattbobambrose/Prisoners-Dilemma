@@ -1,4 +1,4 @@
-import com.mattbobambrose.prisoner.game_server.TransportType.LOCAL
+import com.mattbobambrose.prisoner.game_server.TransportType.KRPC
 import com.mattbobambrose.prisoner.player_server.PlayerDSL.competition
 import com.mattbobambrose.prisoner.player_server.PlayerDSL.config
 import com.mattbobambrose.prisoner.player_server.PlayerDSL.gameServer
@@ -14,10 +14,9 @@ object CompetitionScript {
 
     @JvmStatic
     fun main(args: Array<String>) {
-        gameServer {
+        gameServer(KRPC) {
             config {
                 concurrentMatches = 10
-                transportType = LOCAL
             }
             onBegin {
                 logger.info { "Game server started" }
@@ -27,7 +26,6 @@ object CompetitionScript {
             }
             repeat(1) {
                 competition("Competition $it") {
-                    println("${competition.gameServer.concurrentMatches}*********")
                     onBegin {
                         logger.info { "Competition $it started" }
                     }

@@ -39,7 +39,7 @@ class PlayerServer(val gameServer: GameServer, val portNumber: Int) {
     }
 
     companion object {
-        private val logger = KotlinLogging.logger {}
+        val logger = KotlinLogging.logger {}
 
         fun register(username: Username, competitionId: CompetitionId, url: String, rules: Rules) {
             HttpClient(io.ktor.client.engine.cio.CIO) {
