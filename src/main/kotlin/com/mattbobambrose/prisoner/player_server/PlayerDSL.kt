@@ -28,11 +28,8 @@ object PlayerDSL {
     }
 
     fun gameServer(transportType: TransportType, block: GameServerContext.() -> Unit) {
-        val gs = GameServer(transportType)
-        Thread.sleep(1000)
-        gs.startServer()
-        with(gs) {
-//            startServer()
+        with(GameServer(transportType)) {
+            startServer()
             gameServerContext.apply {
                 apply(block)
                 onBeginLambdas.forEach { it(this@with) }

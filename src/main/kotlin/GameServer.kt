@@ -16,6 +16,7 @@ import com.mattbobambrose.prisoner.game_server.TransportType.GRPC
 import com.mattbobambrose.prisoner.game_server.TransportType.KRPC
 import com.mattbobambrose.prisoner.game_server.TransportType.LOCAL
 import com.mattbobambrose.prisoner.game_server.TransportType.REST
+import com.mattbobambrose.prisoner.game_server.gameServerModule
 import com.mattbobambrose.prisoner.player_server.Competition
 import com.mattbobambrose.prisoner.player_server.PlayerDSL.GameServerContext
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -37,7 +38,7 @@ class GameServer(val transportType: TransportType = REST) {
     val threadCompleteLatch = CountDownLatch(2)
     private lateinit var httpServer: NettyApplicationEngine
 
-    init {
+    fun startChannelThreads() {
         thread {
             runBlocking {
                 for (request in gameRequestChannel) {
@@ -78,10 +79,11 @@ class GameServer(val transportType: TransportType = REST) {
                 port = GAME_SERVER_PORT,
                 host = "0.0.0.0",
                 module = {
-//                    gameServerModule(this@GameServer, competitionMap)
+                    gameServerModule(this@GameServer, competitionMap)
                 })
             httpServer.start(wait = false)
         }
+        startChannelThreads()
     }
 
     fun stopServer() {
