@@ -88,12 +88,9 @@ class GameServer(val transportType: TransportType = REST) {
         logger.info { "Playing game for $competitionId" }
         val strategyInfoList =
             requests.map { request ->
-                val player = competition.playerMap[request.portNumber]
-                    ?: error("Player not found")
-                logger.info { "I am here 1" }
+                val player = competition.lookUpPlayer(request.portNumber)
                 val strategyFqnList =
                     player.callTransport.getStrategyFqnList(competitionId, request)
-                logger.info { "I am here 2" }
                 strategyFqnList.map { strategyFqn ->
                     StrategyInfo(request.url, request.portNumber, request.username, strategyFqn)
                 }

@@ -7,6 +7,7 @@ import com.mattbobambrose.prisoner.common.Constants.GAME_SERVER_PORT
 import com.mattbobambrose.prisoner.common.EndpointNames.GO
 import com.mattbobambrose.prisoner.common.HttpObjects.PlayerDTO
 import com.mattbobambrose.prisoner.common.HttpObjects.Rules
+import com.mattbobambrose.prisoner.common.Port
 import com.mattbobambrose.prisoner.common.PortNumber
 import com.mattbobambrose.prisoner.common.StrategyFqn
 import com.mattbobambrose.prisoner.common.Username
@@ -34,14 +35,6 @@ class Competition(
 
     init {
         participantMap.putIfAbsent(competitionId, mutableListOf())
-    }
-
-    fun createPlayerServers(gameServer: GameServer) {
-        playerMap.forEach { portNumber, player ->
-            val playerServer = PlayerServer(gameServer, portNumber.number)
-            playerServers += playerServer
-            playerServer.startPlayerServer()
-        }
     }
 
     fun registerPlayers() {
@@ -76,6 +69,11 @@ class Competition(
             }
             .flatten()
     }
+
+    fun lookUpPlayer(port: Port) = lookUpPlayer(port.portNumber)
+
+    fun lookUpPlayer(portNumber: PortNumber) =
+        playerMap[portNumber] ?: error("Player not found for port: $portNumber")
 
     fun onCompletion() {
         playerServers.forEach { it.stopPlayerServer() }

@@ -4,7 +4,6 @@ import GameServer
 import com.mattbobambrose.prisoner.common.CompetitionId
 import com.mattbobambrose.prisoner.common.HttpObjects.Rules
 import com.mattbobambrose.prisoner.common.Port
-import com.mattbobambrose.prisoner.common.PortNumber
 import com.mattbobambrose.prisoner.common.Username
 import com.mattbobambrose.prisoner.common.Utils.getTimestamp
 import com.mattbobambrose.prisoner.game_server.TransportType
@@ -26,7 +25,9 @@ object PlayerDSL {
     class CompetitionContext(val competition: Competition) {
         val onBeginLambdas = mutableListOf<(Competition) -> Unit>()
         val onEndLambdas = mutableListOf<(Competition) -> Unit>()
-        val playerLambdas = mutableListOf<() -> Unit>()
+        val createPlayerClientLambdas = mutableListOf<(Competition) -> Unit>()
+        val configPlayerClientLambdas = mutableListOf<() -> Unit>()
+        val createPlayerServerLambdas = mutableListOf<() -> Unit>()
     }
 
     fun gameServer(transportType: TransportType, block: GameServerContext.() -> Unit) {
@@ -62,17 +63,21 @@ object PlayerDSL {
         competitionLamdas += {
             val competitionId = CompetitionId("$name-${getTimestamp()}")
             val competition = Competition(gameServer, competitionId, CountDownLatch(1))
-            gameServer.competitionMap[competitionId] = competition
-            competition.competitionContext
-                .apply(block)
-                .onBeginLambdas.forEach { it(competition) }
-            competition.createPlayerServers(gameServer)
-            competition.competitionContext.playerLambdas.forEach { it() }
-            val participants =
-                competition.participantMap[competitionId] ?: error("No strategies found")
-            require(participants.size > 1) { "Competition must have at least 2 strategies" }
-            competition.registerPlayers()
-            competition.triggerGameStart()
+            with(competition) {
+                gameServer.competitionMap[competitionId] = competition
+                with(competitionContext) {
+                    apply(block)
+                    onBeginLambdas.forEach { it(competition) }
+                    createPlayerClientLambdas.forEach { it(competition) }
+                    createPlayerServerLambdas.forEach { it() }
+                    configPlayerClientLambdas.forEach { it() }
+                }
+                val participants =
+                    participantMap[competitionId] ?: error("No strategies found")
+                require(participants.size > 1) { "Competition must have at least 2 strategies" }
+                registerPlayers()
+                triggerGameStart()
+            }
         }
     }
 
@@ -89,10 +94,15 @@ object PlayerDSL {
     }
 
     fun CompetitionContext.player(username: String, block: Player.() -> Unit) {
-        playerLambdas += {
-            val port: Port = Port.nextAvailablePort()
-            competition.playerMap[PortNumber(port.portNumber)] =
-                Player(competition, Username(username), port).apply(block)
+        val port: Port = Port.nextAvailablePort()
+        createPlayerClientLambdas += {
+            competition.playerMap[port.portNumber] = Player(competition, Username(username), port)
+        }
+        configPlayerClientLambdas += { competition.lookUpPlayer(port).apply(block) }
+        createPlayerServerLambdas += {
+            val playerServer = PlayerServer(competition.gameServer, port.portNumber.number)
+            competition.playerServers += playerServer
+            playerServer.startPlayerServer()
         }
     }
 

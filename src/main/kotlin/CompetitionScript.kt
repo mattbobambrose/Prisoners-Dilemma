@@ -40,10 +40,10 @@ object CompetitionScript {
                         titForTat()
                     }
                     player("Paul") {
-//                        titForTat()
+                        titForTat()
                     }
                     player("Anh") {
-//                        titForTat()
+                        titForTat()
                     }
                 }
             }

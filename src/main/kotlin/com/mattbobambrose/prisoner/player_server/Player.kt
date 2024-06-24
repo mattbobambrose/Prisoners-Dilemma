@@ -16,7 +16,7 @@ import com.mattbobambrose.prisoner.strategy.GameStrategy
 class Player(val competition: Competition, val username: Username, val port: Port) {
     val portNumber get() = port.portNumber
 
-    private val clientContext = ClientContext(portNumber)
+    private val clientContext = ClientContext(portNumber.number)
     val callTransport: CallTransport by lazy {
         PlayerServer.logger.info { "Creating transport for ${competition.gameServer.transportType}" }
         when (competition.gameServer.transportType) {

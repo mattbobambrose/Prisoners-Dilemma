@@ -31,10 +31,8 @@ class Match(
         isRunning = true
         for (i in 0 until rules.rounds) {
             val competition = generation.game.gameServer.getCompetition(competitionId)
-            val callTransport1 = competition.playerMap[info1.portNumber]?.callTransport
-                ?: error("Player not found")
-            val callTransport2 = competition.playerMap[info2.portNumber]?.callTransport
-                ?: error("Player not found")
+            val callTransport1 = competition.lookUpPlayer(info1.portNumber).callTransport
+            val callTransport2 = competition.lookUpPlayer(info2.portNumber).callTransport
             val d1 = callTransport1.requestDecision(this, info1, info2, i)
             val d2 = callTransport2.requestDecision(this, info2, info1, i)
 
