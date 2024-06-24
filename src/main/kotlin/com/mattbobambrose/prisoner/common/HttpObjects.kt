@@ -30,7 +30,8 @@ class HttpObjects {
 
     @Serializable
     data class StrategyInfo(
-        val url: String,
+        val url: String, // for rest transport
+        val portNumber: PortNumber, // for krpc transport
         val username: Username,
         val fqn: StrategyFqn
     )
@@ -42,7 +43,8 @@ class HttpObjects {
     data class GameRequest(
         val competitionId: CompetitionId,
         val username: Username,
-        val url: String,
+        val url: String, // for rest transport
+        val portNumber: PortNumber, // for krpc transport
         val rules: Rules = Rules()
     )
 }

@@ -4,11 +4,10 @@ import com.mattbobambrose.prisoner.common.CompetitionId
 import com.mattbobambrose.prisoner.common.HttpObjects.GameRequest
 import com.mattbobambrose.prisoner.common.HttpObjects.StrategyInfo
 import com.mattbobambrose.prisoner.common.KRpcService
-import kotlinx.rpc.RPCClient
 import kotlinx.rpc.client.withService
 import kotlinx.rpc.internal.streamScoped
 
-class KRpcTransport(val client: RPCClient) : CallTransport {
+class KRpcTransport(val clientContext: ClientContext) : CallTransport {
     override suspend fun requestDecision(
         match: Match,
         info: StrategyInfo,
@@ -16,7 +15,7 @@ class KRpcTransport(val client: RPCClient) : CallTransport {
         round: Int
     ) =
         streamScoped {
-            client
+            clientContext.krpcClient
                 .withService<KRpcService>()
                 .requestDecision(
                     match.competitionId,
@@ -33,7 +32,7 @@ class KRpcTransport(val client: RPCClient) : CallTransport {
         gameRequest: GameRequest
     ) =
         streamScoped {
-            client
+            clientContext.krpcClient
                 .withService<KRpcService>()
                 .getStrategyFqnList(competitionId, gameRequest)
         }

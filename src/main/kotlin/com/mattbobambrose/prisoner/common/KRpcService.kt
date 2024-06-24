@@ -1,5 +1,6 @@
 package com.mattbobambrose.prisoner.common
 
+import com.mattbobambrose.prisoner.common.HttpObjects.GameRequest
 import com.mattbobambrose.prisoner.common.HttpObjects.StrategyInfo
 import kotlinx.rpc.RPC
 
@@ -15,6 +16,6 @@ interface KRpcService : RPC {
 
     suspend fun getStrategyFqnList(
         competitionId: CompetitionId,
-        gameRequest: HttpObjects.GameRequest
+        gameRequest: GameRequest
     ): List<StrategyFqn>
 }

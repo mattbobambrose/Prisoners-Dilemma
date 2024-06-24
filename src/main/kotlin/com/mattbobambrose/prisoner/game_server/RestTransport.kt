@@ -10,19 +10,18 @@ import com.mattbobambrose.prisoner.common.HttpObjects.StrategyInfo
 import com.mattbobambrose.prisoner.common.StrategyFqn
 import com.mattbobambrose.prisoner.common.Utils.encode
 import com.mattbobambrose.prisoner.common.Utils.setJsonBody
-import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.get
 import io.ktor.client.request.post
 
-class RestTransport(val client: HttpClient) : CallTransport {
+class RestTransport(val clientContext: ClientContext) : CallTransport {
     override suspend fun requestDecision(
         match: Match,
         info: StrategyInfo,
         opponentInfo: StrategyInfo,
         round: Int
     ): Decision {
-        return client.post("${info.url}/$STRATEGY/${match.competitionId.id.encode()}/${info.fqn.name.encode()}") {
+        return clientContext.httpClient.post("${info.url}/$STRATEGY/${match.competitionId.id.encode()}/${info.fqn.name.encode()}") {
             setJsonBody(
                 HttpObjects.StrategyArgs(
                     round,
@@ -38,6 +37,6 @@ class RestTransport(val client: HttpClient) : CallTransport {
         competitionId: CompetitionId,
         gameRequest: HttpObjects.GameRequest
     ) =
-        client.get("${gameRequest.url}/$STRATEGYFQNS?$COMPETITION_ID=${competitionId.id.encode()}&username=${gameRequest.username.name.encode()}")
+        clientContext.httpClient.get("${gameRequest.url}/$STRATEGYFQNS?$COMPETITION_ID=${competitionId.id.encode()}&username=${gameRequest.username.name.encode()}")
             .body<List<StrategyFqn>>()
 }

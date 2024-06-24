@@ -1,4 +1,4 @@
-import com.mattbobambrose.prisoner.game_server.TransportType.KRPC
+import com.mattbobambrose.prisoner.game_server.TransportType.REST
 import com.mattbobambrose.prisoner.player_server.PlayerDSL.competition
 import com.mattbobambrose.prisoner.player_server.PlayerDSL.config
 import com.mattbobambrose.prisoner.player_server.PlayerDSL.gameServer
@@ -14,7 +14,7 @@ object CompetitionScript {
 
     @JvmStatic
     fun main(args: Array<String>) {
-        gameServer(KRPC) {
+        gameServer(REST) {
             config {
                 concurrentMatches = 10
             }

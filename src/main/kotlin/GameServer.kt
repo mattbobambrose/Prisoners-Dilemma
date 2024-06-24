@@ -4,17 +4,9 @@ import com.mattbobambrose.prisoner.common.Constants.GAME_SERVER_PORT
 import com.mattbobambrose.prisoner.common.Constants.GENERATION_COUNT
 import com.mattbobambrose.prisoner.common.HttpObjects.GameRequest
 import com.mattbobambrose.prisoner.common.HttpObjects.StrategyInfo
-import com.mattbobambrose.prisoner.game_server.CallTransport
-import com.mattbobambrose.prisoner.game_server.ClientContext
 import com.mattbobambrose.prisoner.game_server.Game
-import com.mattbobambrose.prisoner.game_server.KRpcTransport
-import com.mattbobambrose.prisoner.game_server.LocalTransport
-import com.mattbobambrose.prisoner.game_server.RestTransport
 import com.mattbobambrose.prisoner.game_server.SuspendingCountDownLatch
 import com.mattbobambrose.prisoner.game_server.TransportType
-import com.mattbobambrose.prisoner.game_server.TransportType.GRPC
-import com.mattbobambrose.prisoner.game_server.TransportType.KRPC
-import com.mattbobambrose.prisoner.game_server.TransportType.LOCAL
 import com.mattbobambrose.prisoner.game_server.TransportType.REST
 import com.mattbobambrose.prisoner.game_server.gameServerModule
 import com.mattbobambrose.prisoner.player_server.Competition
@@ -54,25 +46,16 @@ class GameServer(val transportType: TransportType = REST) {
 
         thread {
             runBlocking {
-                ClientContext().use { clientContext ->
-                    val callTransport: CallTransport =
-                        when (transportType) {
-                            LOCAL -> LocalTransport(this@GameServer)
-                            REST -> RestTransport(clientContext.httpClient)
-                            GRPC -> throw NotImplementedError("gRPC not supported")
-                            KRPC -> KRpcTransport(clientContext.krpcClient)
-                        }
-                    for ((competitionId, gameLatch) in pendingCompetitionChannel) {
-                        logger.info { "Starting game ${competitionId.id}" }
-                        launch { playGame(callTransport, competitionId, gameLatch) }
-                    }
+                for ((competitionId, gameLatch) in pendingCompetitionChannel) {
+                    logger.info { "Starting game ${competitionId.id}" }
+                    launch { playGame(competitionId, gameLatch) }
                 }
             }
             threadCompleteLatch.countDown()
         }
     }
 
-    fun startServer() {
+    fun startGameServer() {
         if (transportType.requiresHttp) {
             httpServer = embeddedServer(
                 io.ktor.server.netty.Netty,
@@ -86,7 +69,7 @@ class GameServer(val transportType: TransportType = REST) {
         startChannelThreads()
     }
 
-    fun stopServer() {
+    fun stopGameServer() {
         gameRequestChannel.close()
         pendingCompetitionChannel.close()
         threadCompleteLatch.await()
@@ -96,28 +79,37 @@ class GameServer(val transportType: TransportType = REST) {
     }
 
     suspend fun playGame(
-        callTransport: CallTransport,
         competitionId: CompetitionId,
         gameLatch: SuspendingCountDownLatch
     ) {
         val requests = pendingGameRequestsMap.remove(competitionId)
-            ?: error("No participants for game ${competitionId.id}")
+            ?: error("No game requests for ${competitionId.id}")
+        val competition = competitionMap[competitionId] ?: error("Competition not found")
+        logger.info { "Playing game for $competitionId" }
         val strategyInfoList =
             requests.map { request ->
-                callTransport.getStrategyFqnList(competitionId, request)
-                    .map { strategyFqn ->
-                        StrategyInfo(request.url, request.username, strategyFqn)
-                    }
+                val player = competition.playerMap[request.portNumber]
+                    ?: error("Player not found")
+                logger.info { "I am here 1" }
+                val strategyFqnList =
+                    player.callTransport.getStrategyFqnList(competitionId, request)
+                logger.info { "I am here 2" }
+                strategyFqnList.map { strategyFqn ->
+                    StrategyInfo(request.url, request.portNumber, request.username, strategyFqn)
+                }
             }.flatten()
 
         with(Game(this, competitionId, strategyInfoList, GENERATION_COUNT)) {
             gameLatch.countDown()
             gameList.add(this)
-            runGame(callTransport, requests.first().rules)
+            runGame(requests.first().rules)
             reportScores()
             competitionMap[competitionId]?.onCompletion()
         }
     }
+
+    fun getCompetition(competitionId: CompetitionId): Competition =
+        competitionMap[competitionId] ?: error("Competition not found: $competitionId")
 
     companion object {
         val logger = KotlinLogging.logger {}

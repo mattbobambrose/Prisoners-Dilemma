@@ -53,3 +53,13 @@ value class MatchId(val id: String) {
         val unknownMatchId = MatchId("Unknown")
     }
 }
+
+@JvmInline
+@Serializable
+value class PortNumber(val number: Int) {
+    init {
+        require(number in 1..65535) { "Port number must be between 1 and 65535" }
+    }
+
+    override fun toString(): String = number.toString()
+}

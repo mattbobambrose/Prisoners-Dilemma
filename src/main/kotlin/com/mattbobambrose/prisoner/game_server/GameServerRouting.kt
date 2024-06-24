@@ -21,7 +21,6 @@ import io.ktor.server.application.call
 import io.ktor.server.html.respondHtml
 import io.ktor.server.http.content.staticResources
 import io.ktor.server.request.receive
-import io.ktor.server.response.respondRedirect
 import io.ktor.server.response.respondText
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
@@ -94,7 +93,15 @@ fun Application.gameServerRouting(gameServer: GameServer) {
             gameServer.pendingCompetitionChannel.send(CompetitionId(competitionId) to gameLatch)
             logger.info { "Competition $competitionId requested to start" }
             gameLatch.await()
-            call.respondRedirect("/$SCOREBOARD?$COMPETITION_ID=${competitionId.encode()}")
+//            call.respondRedirect("/$SCOREBOARD?$COMPETITION_ID=${competitionId.encode()}")
+            call.respondText("Registered")
+        }
+
+        post("/$REGISTER") {
+            val participant = call.receive<GameRequest>()
+            logger.info { "Registered: $participant" }
+            gameServer.gameRequestChannel.send(participant)
+            call.respondText("Registered")
         }
 
         get("/$SCOREBOARD") {
@@ -294,13 +301,6 @@ fun Application.gameServerRouting(gameServer: GameServer) {
                     }
                 }
             }
-        }
-
-        post("/$REGISTER") {
-            val participant = call.receive<GameRequest>()
-            logger.info { "Registered: $participant" }
-            gameServer.gameRequestChannel.send(participant)
-            call.respondText("Registered")
         }
     }
 }

@@ -27,11 +27,16 @@ class Match(
     var isFinished = false
     val competitionId get() = generation.game.competitionId
 
-    suspend fun runMatch(callTransport: CallTransport) {
+    suspend fun runMatch() {
         isRunning = true
         for (i in 0 until rules.rounds) {
-            val d1 = callTransport.requestDecision(this, info1, info2, i)
-            val d2 = callTransport.requestDecision(this, info2, info1, i)
+            val competition = generation.game.gameServer.getCompetition(competitionId)
+            val callTransport1 = competition.playerMap[info1.portNumber]?.callTransport
+                ?: error("Player not found")
+            val callTransport2 = competition.playerMap[info2.portNumber]?.callTransport
+                ?: error("Player not found")
+            val d1 = callTransport1.requestDecision(this, info1, info2, i)
+            val d2 = callTransport2.requestDecision(this, info2, info1, i)
 
             updateIncreases(d1, d2)
             updateScore()

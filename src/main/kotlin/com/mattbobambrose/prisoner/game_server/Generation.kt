@@ -15,7 +15,7 @@ class Generation(
     val matchList = mutableListOf<Match>()
     var isFinished = false
 
-    fun playMatches(callTransport: CallTransport) {
+    fun playMatches() {
         val concurrentMatches = game.gameServer.concurrentMatches
         strategyInfoList
             .pairCombinations()
@@ -24,7 +24,7 @@ class Generation(
                     .also { match -> matchList.add(match) }
             }.forEach(concurrentMatches) {
                 logger.info { "Launching match: $it" }
-                it.runMatch(callTransport)
+                it.runMatch()
                 logger.info { "Match finished: $it" }
             }
 

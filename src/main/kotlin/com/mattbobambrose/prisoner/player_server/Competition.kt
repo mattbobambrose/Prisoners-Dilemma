@@ -7,6 +7,7 @@ import com.mattbobambrose.prisoner.common.Constants.GAME_SERVER_PORT
 import com.mattbobambrose.prisoner.common.EndpointNames.GO
 import com.mattbobambrose.prisoner.common.HttpObjects.PlayerDTO
 import com.mattbobambrose.prisoner.common.HttpObjects.Rules
+import com.mattbobambrose.prisoner.common.PortNumber
 import com.mattbobambrose.prisoner.common.StrategyFqn
 import com.mattbobambrose.prisoner.common.Username
 import com.mattbobambrose.prisoner.common.Utils
@@ -24,7 +25,7 @@ class Competition(
     val competitionId: CompetitionId = CompetitionId(Utils.getRandomString(10)),
     val completionLatch: CountDownLatch
 ) {
-    val players = mutableListOf<Player>()
+    val playerMap = mutableMapOf<PortNumber, Player>()
     var rules: Rules = Rules()
     val playerServers = mutableListOf<PlayerServer>()
     val competitionContext = CompetitionContext(this)
@@ -35,20 +36,22 @@ class Competition(
         participantMap.putIfAbsent(competitionId, mutableListOf())
     }
 
-    fun start(gameServer: GameServer) {
-        val strategies = participantMap[competitionId] ?: error("No strategies found")
-        require((strategies.size ?: 0) > 1) { "Competition must have at least 2 strategies" }
-        players.forEach {
-            val playerServer = PlayerServer(gameServer, it.portNumber)
+    fun createPlayerServers(gameServer: GameServer) {
+        playerMap.forEach { portNumber, player ->
+            val playerServer = PlayerServer(gameServer, portNumber.number)
             playerServers += playerServer
-            playerServer.startServer()
-            val url = "http://localhost:${it.portNumber}"
-            PlayerServer.register(it.username, competitionId, url, rules)
+            playerServer.startPlayerServer()
         }
-        triggerGameStart()
     }
 
-    private fun triggerGameStart() {
+    fun registerPlayers() {
+        playerMap.forEach { portNumber, player ->
+            val url = "http://localhost:${portNumber}"
+            PlayerServer.register(player.username, competitionId, url, portNumber.number, rules)
+        }
+    }
+
+    fun triggerGameStart() {
         // This will not wait for game completion
         createHttpClient().use { client ->
             runBlocking {
@@ -75,8 +78,8 @@ class Competition(
     }
 
     fun onCompletion() {
-        playerServers.forEach { it.stopServer() }
-        players.forEach { it.port.setAvailable() }
+        playerServers.forEach { it.stopPlayerServer() }
+        playerMap.values.forEach { it.port.setAvailable() }
         completionLatch.countDown()
         competitionContext.onEndLambdas.forEach { it(this) }
         logger.info { "Competition ${competitionId.id} completed" }

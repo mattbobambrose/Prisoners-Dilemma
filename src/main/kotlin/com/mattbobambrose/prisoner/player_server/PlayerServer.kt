@@ -6,6 +6,7 @@ import com.mattbobambrose.prisoner.common.Constants.GAME_SERVER_PORT
 import com.mattbobambrose.prisoner.common.EndpointNames.REGISTER
 import com.mattbobambrose.prisoner.common.HttpObjects.GameRequest
 import com.mattbobambrose.prisoner.common.HttpObjects.Rules
+import com.mattbobambrose.prisoner.common.PortNumber
 import com.mattbobambrose.prisoner.common.Username
 import com.mattbobambrose.prisoner.common.Utils.setJsonBody
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -20,7 +21,7 @@ class PlayerServer(val gameServer: GameServer, val portNumber: Int) {
     val transportType = gameServer.transportType
     private lateinit var playerHttpServer: NettyApplicationEngine
 
-    fun startServer() {
+    fun startPlayerServer() {
         if (transportType.requiresHttp) {
             playerHttpServer = embeddedServer(
                 io.ktor.server.netty.Netty,
@@ -32,7 +33,7 @@ class PlayerServer(val gameServer: GameServer, val portNumber: Int) {
         }
     }
 
-    fun stopServer() {
+    fun stopPlayerServer() {
         if (transportType.requiresHttp) {
             playerHttpServer.stop(1000, 1000)
         }
@@ -41,7 +42,13 @@ class PlayerServer(val gameServer: GameServer, val portNumber: Int) {
     companion object {
         val logger = KotlinLogging.logger {}
 
-        fun register(username: Username, competitionId: CompetitionId, url: String, rules: Rules) {
+        fun register(
+            username: Username,
+            competitionId: CompetitionId,
+            url: String,
+            portNumber: Int,
+            rules: Rules
+        ) {
             HttpClient(io.ktor.client.engine.cio.CIO) {
                 install(io.ktor.client.plugins.contentnegotiation.ContentNegotiation) {
                     json()
@@ -50,7 +57,7 @@ class PlayerServer(val gameServer: GameServer, val portNumber: Int) {
                 runBlocking {
                     client.post("http://localhost:$GAME_SERVER_PORT/$REGISTER") {
                         setJsonBody(
-                            GameRequest(competitionId, username, url, rules)
+                            GameRequest(competitionId, username, url, PortNumber(portNumber), rules)
                         )
                     }
                 }
